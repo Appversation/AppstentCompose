@@ -62,15 +62,3 @@ fun ImageView(viewContent: JSONObject) {
     }
 }
 
-@Composable
-fun GreetingFromLib(name: String) {
-    Text(text = "Hi $name!")
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    AppstentTheme {
-        GreetingFromLib("Android")
-    }
-}

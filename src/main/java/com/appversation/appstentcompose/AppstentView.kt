@@ -12,10 +12,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.materialIcon
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -65,10 +68,67 @@ fun ImageView(viewContent: JSONObject) {
     val imageSource = viewContent.getString("source")
 
     when (sourceType) {
-        "remote"    -> AsyncImage(imageSource, null)
+        "remote"    -> AsyncImage(imageSource, null,
+            contentScale = ContentScale.FillWidth,
+            modifier = Modifier.fillMaxWidth()
+        )
+        "system"    -> getIconForName(imageSource)
         else        -> Image(painterResource(id = imageSource.toInt()),null)
     }
 }
+
+@Composable
+fun getIconForName(name: String) {
+
+    val icon = when(name) {
+        "house"     -> Icons.Outlined.Home
+        "plus"      -> Icons.Outlined.Add
+        "exclamationmark.triangle"     -> Icons.Outlined.Warning
+        "mail"      -> Icons.Outlined.MailOutline
+        "phone"     -> Icons.Outlined.Call
+        "person.crop.square"      -> Icons.Outlined.AccountBox
+        "person.circle"     -> Icons.Outlined.AccountCircle
+        "plus.circle"      -> Icons.Outlined.AddCircle
+        "arrow.backward"     -> Icons.Outlined.ArrowBack
+        "arrow.forward"      -> Icons.Outlined.ArrowForward
+        "arrow.down"     -> Icons.Outlined.ArrowDropDown
+        "checkmark"      -> Icons.Outlined.Check
+        "checkmark.circle"     -> Icons.Outlined.CheckCircle
+        "clear"      -> Icons.Outlined.Clear
+        "xmark"     -> Icons.Outlined.Close
+        "calendar"      -> Icons.Outlined.DateRange
+        "delete.left"     -> Icons.Outlined.Delete
+        "pencil"      -> Icons.Outlined.Edit
+        "face.smiling"     -> Icons.Outlined.Face
+        "heart"      -> Icons.Outlined.Favorite
+        "heart.square"     -> Icons.Outlined.FavoriteBorder
+        "info"      -> Icons.Outlined.Info
+        "keyboard.chevron.compact.down"      -> Icons.Outlined.KeyboardArrowDown
+        "keyboard.chevron.compact.left"      -> Icons.Outlined.KeyboardArrowLeft
+        "keyboard.chevron.compact.right"     -> Icons.Outlined.KeyboardArrowRight
+        "list.bullet"     -> Icons.Outlined.List
+        "location"        -> Icons.Outlined.LocationOn
+        "lock"            -> Icons.Outlined.Lock
+        "play"            -> Icons.Outlined.PlayArrow
+        "photo"           -> Icons.Outlined.Place
+        "arrow.clockwise" -> Icons.Outlined.Refresh
+        "magnifyingglass" -> Icons.Outlined.Search
+        "gear"            -> Icons.Outlined.Settings
+        "square.and.arrow.up" -> Icons.Outlined.Share
+        "cart"            -> Icons.Outlined.ShoppingCart
+        "star"            -> Icons.Outlined.Star
+        "hand.thumbsup"   -> Icons.Outlined.ThumbUp
+        else        ->  Icons.Outlined.Warning
+    }
+
+    return Icon(imageVector = icon, "",
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+            .fillMaxSize()
+            .aspectRatio(1f))
+}
+
 
 enum class Direction {
     x, y, z

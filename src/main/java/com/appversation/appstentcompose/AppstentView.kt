@@ -1,28 +1,21 @@
 package com.appversation.appstentcompose
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import coil.compose.AsyncImage
 import com.appversation.appstentcompose.ui.theme.AppstentTheme
@@ -58,7 +51,14 @@ fun SpacerView(viewContent: JSONObject) {
 fun TextView(viewContent: JSONObject) {
     val textString = viewContent.getString("text")
 
-    Text(textString)
+    var color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Black
+
+    if (viewContent.has("foregroundColor")) {
+        val fgColor = viewContent.getString("foregroundColor")
+        color = Color(android.graphics.Color.parseColor(fgColor))
+    }
+
+    Text(textString, color = color, modifier = Modifier.getModifier(viewContent))
 }
 
 @Composable
@@ -70,15 +70,15 @@ fun ImageView(viewContent: JSONObject) {
     when (sourceType) {
         "remote"    -> AsyncImage(imageSource, null,
             contentScale = ContentScale.FillWidth,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().getModifier(viewContent)
         )
-        "system"    -> getIconForName(imageSource)
-        else        -> Image(painterResource(id = imageSource.toInt()),null)
+        "system"    -> Icon(imageSource)
+        else        -> Image(painterResource(id = imageSource.toInt()),null, modifier = Modifier.getModifier(viewContent))
     }
 }
 
 @Composable
-fun getIconForName(name: String) {
+fun Icon(name: String) {
 
     val icon = when(name) {
         "house"     -> Icons.Outlined.Home
@@ -140,21 +140,23 @@ fun StackView(viewContent: JSONObject, direction: Direction) {
     val views = viewContent.getJSONArray("views")
     val scrollable = viewContent.optBoolean("scrollable", false)
 
+    val appstentModifier = Modifier.getModifier(viewContent)
+
     val columnModifier: Modifier = if (scrollable)
-                                        Modifier
+                                        appstentModifier
                                             .verticalScroll(rememberScrollState())
                                             .fillMaxWidth()
                                             .fillMaxHeight()
-                                    else Modifier
+                                    else appstentModifier
                                             .fillMaxWidth()
                                             .fillMaxHeight()
 
     val rowModifier: Modifier = if (scrollable)
-                                    Modifier
+                                    appstentModifier
                                         .horizontalScroll(rememberScrollState())
                                         .fillMaxWidth()
                                         .fillMaxHeight()
-                                else Modifier
+                                else appstentModifier
                                         .fillMaxWidth()
                                         .fillMaxHeight()
 
@@ -177,7 +179,7 @@ fun StackView(viewContent: JSONObject, direction: Direction) {
             }
         }
 
-        Direction.z -> Box {
+        Direction.z -> Box(modifier = appstentModifier) {
             (0 until views.length()).forEach {
                 AppstentView(viewContent = views.getJSONObject(it))
             }

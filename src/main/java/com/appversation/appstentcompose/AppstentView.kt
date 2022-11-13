@@ -4,15 +4,14 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -49,16 +48,46 @@ fun SpacerView(viewContent: JSONObject) {
 
 @Composable
 fun TextView(viewContent: JSONObject) {
-    val textString = viewContent.getString("text")
+    var textString = ""
 
+    if (viewContent.has("text")) {
+        textString = viewContent.getString("text")
+    }
+
+    if (viewContent.has("dynamicText")) {
+        val dynamicTextFieldName = viewContent.getString("dynamicText")
+        textString = ModuleConfigs.customContentDataProvider?.getStringFor(dynamicTextFieldName) ?: textString
+    }
+
+    //foreground color
     var color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Black
-
     if (viewContent.has("foregroundColor")) {
         val fgColor = viewContent.getString("foregroundColor")
         color = Color(android.graphics.Color.parseColor(fgColor))
     }
 
-    Text(textString, color = color, modifier = Modifier.getModifier(viewContent))
+    val fontString = viewContent.getString("font")
+    val textStyle = when (fontString) {
+        "largeTitle"    -> androidx.compose.material.MaterialTheme.typography.h3
+        "title"         -> androidx.compose.material.MaterialTheme.typography.h4
+        "title2"        -> androidx.compose.material.MaterialTheme.typography.h5
+        "title3"        -> androidx.compose.material.MaterialTheme.typography.h6
+        "headline"      -> androidx.compose.material.MaterialTheme.typography.subtitle1
+        "subheadline"   -> androidx.compose.material.MaterialTheme.typography.subtitle2
+        "body"          -> androidx.compose.material.MaterialTheme.typography.body1
+        "callout"       -> androidx.compose.material.MaterialTheme.typography.body2
+        "footnote"      -> androidx.compose.material.MaterialTheme.typography.overline
+        "caption"       -> androidx.compose.material.MaterialTheme.typography.caption
+        else            -> {
+
+            getCustomFontStyle(viewContent)
+        }
+    }
+
+    Text(textString,
+        color = color,
+        style = textStyle,
+        modifier = Modifier.getModifier(viewContent))
 }
 
 @Composable

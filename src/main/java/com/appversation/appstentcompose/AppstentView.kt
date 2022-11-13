@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import coil.compose.AsyncImage
 import com.appversation.appstentcompose.ui.theme.AppstentTheme
@@ -66,21 +67,24 @@ fun TextView(viewContent: JSONObject) {
         color = Color(android.graphics.Color.parseColor(fgColor))
     }
 
-    val fontString = viewContent.getString("font")
-    val textStyle = when (fontString) {
-        "largeTitle"    -> androidx.compose.material.MaterialTheme.typography.h3
-        "title"         -> androidx.compose.material.MaterialTheme.typography.h4
-        "title2"        -> androidx.compose.material.MaterialTheme.typography.h5
-        "title3"        -> androidx.compose.material.MaterialTheme.typography.h6
-        "headline"      -> androidx.compose.material.MaterialTheme.typography.subtitle1
-        "subheadline"   -> androidx.compose.material.MaterialTheme.typography.subtitle2
-        "body"          -> androidx.compose.material.MaterialTheme.typography.body1
-        "callout"       -> androidx.compose.material.MaterialTheme.typography.body2
-        "footnote"      -> androidx.compose.material.MaterialTheme.typography.overline
-        "caption"       -> androidx.compose.material.MaterialTheme.typography.caption
-        else            -> {
+    var textStyle = TextStyle.Default
+    if (viewContent.has("font")) {
+        val fontString = viewContent.getString("font")
+        textStyle = when (fontString) {
+            "largeTitle" -> androidx.compose.material.MaterialTheme.typography.h3
+            "title" -> androidx.compose.material.MaterialTheme.typography.h4
+            "title2" -> androidx.compose.material.MaterialTheme.typography.h5
+            "title3" -> androidx.compose.material.MaterialTheme.typography.h6
+            "headline" -> androidx.compose.material.MaterialTheme.typography.subtitle1
+            "subheadline" -> androidx.compose.material.MaterialTheme.typography.subtitle2
+            "body" -> androidx.compose.material.MaterialTheme.typography.body1
+            "callout" -> androidx.compose.material.MaterialTheme.typography.body2
+            "footnote" -> androidx.compose.material.MaterialTheme.typography.overline
+            "caption" -> androidx.compose.material.MaterialTheme.typography.caption
+            else -> {
 
-            getCustomFontStyle(viewContent)
+                getCustomFontStyle(viewContent)
+            }
         }
     }
 
@@ -139,7 +143,7 @@ fun Icon(name: String) {
         "location"        -> Icons.Outlined.LocationOn
         "lock"            -> Icons.Outlined.Lock
         "play"            -> Icons.Outlined.PlayArrow
-        "photo"           -> Icons.Outlined.Place
+        "place"           -> Icons.Outlined.Place
         "arrow.clockwise" -> Icons.Outlined.Refresh
         "magnifyingglass" -> Icons.Outlined.Search
         "gear"            -> Icons.Outlined.Settings

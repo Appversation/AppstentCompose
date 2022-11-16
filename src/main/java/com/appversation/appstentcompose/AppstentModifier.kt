@@ -3,6 +3,7 @@ package com.appversation.appstentcompose
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -17,6 +18,7 @@ fun Modifier.getModifier(modifierContent: JSONObject) : Modifier {
         .getBackgroundModifier(modifierContent)
         .getClipShapeModifier(modifierContent)
         .getPaddingModifier(modifierContent)
+        .getFrameSizeModifier(modifierContent)
 
 }
 
@@ -48,6 +50,25 @@ fun Modifier.getPaddingModifier(modifierContent: JSONObject) : Modifier {
     return try {
         val padding = modifierContent.getInt("padding")
         this.padding(padding.dp)
+    } catch (e: JSONException) {
+        this
+    }
+}
+
+fun Modifier.getFrameSizeModifier(modifierContent: JSONObject) : Modifier {
+
+    return try {
+        if (modifierContent.has("width") || modifierContent.has("height")) {
+            val width = modifierContent.getDouble("width")
+
+            val height = if (modifierContent.has("height"))
+                            modifierContent.getDouble("height")
+                        else
+                            width
+
+            return this.size(width.dp, height.dp)
+        } else
+            this
     } catch (e: JSONException) {
         this
     }

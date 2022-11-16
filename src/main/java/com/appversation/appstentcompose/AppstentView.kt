@@ -17,6 +17,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.appversation.appstentcompose.ui.theme.AppstentTheme
 import org.json.JSONObject
@@ -103,15 +104,15 @@ fun ImageView(viewContent: JSONObject) {
     when (sourceType) {
         "remote"    -> AsyncImage(imageSource, null,
             contentScale = ContentScale.FillWidth,
-            modifier = Modifier.fillMaxWidth().getModifier(viewContent)
+            modifier = Modifier.getModifier(viewContent).fillMaxWidth()
         )
-        "system"    -> Icon(imageSource)
+        "system"    -> Icon(imageSource, viewContent)
         else        -> Image(painterResource(id = imageSource.toInt()),null, modifier = Modifier.getModifier(viewContent))
     }
 }
 
 @Composable
-fun Icon(name: String) {
+fun Icon(name: String, viewContent: JSONObject) {
 
     val icon = when(name) {
         "house"     -> Icons.Outlined.Home
@@ -155,11 +156,7 @@ fun Icon(name: String) {
     }
 
     return Icon(imageVector = icon, "",
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-            .fillMaxSize()
-            .aspectRatio(1f))
+        modifier = Modifier.getModifier(viewContent).fillMaxWidth())
 }
 
 

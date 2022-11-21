@@ -44,8 +44,12 @@ fun AppstentView(viewContent: JSONObject) {
 @Composable
 fun SpacerView(viewContent: JSONObject) {
 
-    val minLength = viewContent.getDouble("minLength").toFloat()
-    Spacer(modifier = Modifier.defaultMinSize(Dp(minLength), Dp(minLength)))
+    if (viewContent.has("minLength")) {
+        val minLength = viewContent.getDouble("minLength").toFloat()
+        Spacer(modifier = Modifier.defaultMinSize(Dp(minLength), Dp(minLength)))
+    } else {
+        Spacer(modifier = Modifier)
+    }
 }
 
 @Composable
@@ -176,19 +180,15 @@ fun StackView(viewContent: JSONObject, direction: Direction) {
                                         appstentModifier
                                             .verticalScroll(rememberScrollState())
                                             .fillMaxWidth()
-                                            .fillMaxHeight()
                                     else appstentModifier
                                             .fillMaxWidth()
-                                            .fillMaxHeight()
 
     val rowModifier: Modifier = if (scrollable)
                                     appstentModifier
                                         .horizontalScroll(rememberScrollState())
                                         .fillMaxWidth()
-                                        .fillMaxHeight()
                                 else appstentModifier
                                         .fillMaxWidth()
-                                        .fillMaxHeight()
 
     when (direction) {
         Direction.x -> Row(

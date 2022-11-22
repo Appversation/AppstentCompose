@@ -1,7 +1,7 @@
 package com.appversation.appstentcompose
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -19,7 +19,7 @@ fun Modifier.getModifier(modifierContent: JSONObject) : Modifier {
         .getClipShapeModifier(modifierContent)
         .getPaddingModifier(modifierContent)
         .getFrameSizeModifier(modifierContent)
-
+        .getOffsetModifier(modifierContent)
 }
 
 fun Modifier.getClipShapeModifier(modifierContent: JSONObject) : Modifier {
@@ -69,6 +69,20 @@ fun Modifier.getFrameSizeModifier(modifierContent: JSONObject) : Modifier {
             return this.size(width.dp, height.dp)
         } else
             this
+    } catch (e: JSONException) {
+        this
+    }
+}
+
+fun Modifier.getOffsetModifier(modifierContent: JSONObject) : Modifier {
+
+    return try {
+
+        val offsetX = modifierContent.optDouble("offsetX", 0.0)
+        val offsetY = modifierContent.optDouble("offsetY", 0.0)
+
+        return this.offset(x = offsetX.dp, y= offsetY.dp)
+
     } catch (e: JSONException) {
         this
     }

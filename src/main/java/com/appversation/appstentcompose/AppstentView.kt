@@ -174,21 +174,17 @@ fun StackView(viewContent: JSONObject, direction: Direction) {
     val views = viewContent.getJSONArray("views")
     val scrollable = viewContent.optBoolean("scrollable", false)
 
-    val appstentModifier = Modifier.getModifier(viewContent)
+    val appstentModifier = Modifier.getModifier(viewContent).fillMaxWidth()
 
     val columnModifier: Modifier = if (scrollable)
                                         appstentModifier
                                             .verticalScroll(rememberScrollState())
-                                            .fillMaxWidth()
                                     else appstentModifier
-                                            .fillMaxWidth()
 
     val rowModifier: Modifier = if (scrollable)
                                     appstentModifier
                                         .horizontalScroll(rememberScrollState())
-                                        .fillMaxWidth()
                                 else appstentModifier
-                                        .fillMaxWidth()
 
     when (direction) {
         Direction.x -> Row(

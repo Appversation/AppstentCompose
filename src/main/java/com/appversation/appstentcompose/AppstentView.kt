@@ -11,6 +11,7 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -24,16 +25,16 @@ import org.json.JSONObject
 
 
 @Composable
-fun AppstentView(viewContent: JSONObject) {
+fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier) {
     AppstentTheme {
         if (viewContent.has("type")) {
             when (viewContent.getString("type")) {
-                "spacer"    -> SpacerView(viewContent)
-                "text"      -> TextView(viewContent)
-                "image"     -> ImageView(viewContent)
-                "hStack"    -> StackView(viewContent = viewContent, direction = Direction.x)
-                "vStack"    -> StackView(viewContent = viewContent, direction = Direction.y)
-                "zStack"    -> StackView(viewContent = viewContent, direction = Direction.z)
+                "spacer"    -> SpacerView(viewContent, modifier)
+                "text"      -> TextView(viewContent, modifier)
+                "image"     -> ImageView(viewContent, modifier)
+                "hStack"    -> StackView(viewContent = viewContent, direction = Direction.x, modifier)
+                "vStack"    -> StackView(viewContent = viewContent, direction = Direction.y, modifier)
+                "zStack"    -> StackView(viewContent = viewContent, direction = Direction.z, modifier)
 
                 else -> { }
             }
@@ -42,18 +43,18 @@ fun AppstentView(viewContent: JSONObject) {
 }
 
 @Composable
-fun SpacerView(viewContent: JSONObject) {
+fun SpacerView(viewContent: JSONObject, modifier: Modifier = Modifier) {
 
     if (viewContent.has("minLength")) {
         val minLength = viewContent.getDouble("minLength").toFloat()
-        Spacer(modifier = Modifier.defaultMinSize(Dp(minLength), Dp(minLength)))
+        Spacer(modifier = modifier.defaultMinSize(Dp(minLength), Dp(minLength)))
     } else {
-        Spacer(modifier = Modifier)
+        Spacer(modifier = modifier)
     }
 }
 
 @Composable
-fun TextView(viewContent: JSONObject) {
+fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier) {
     var textString = ""
 
     if (viewContent.has("text")) {
@@ -96,11 +97,11 @@ fun TextView(viewContent: JSONObject) {
     Text(textString,
         color = color,
         style = textStyle,
-        modifier = Modifier.getModifier(viewContent))
+        modifier = modifier.getModifier(viewContent))
 }
 
 @Composable
-fun ImageView(viewContent: JSONObject) {
+fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier) {
 
     val sourceType = viewContent.getString("sourceType")
     val imageSource = viewContent.getString("source")
@@ -108,15 +109,15 @@ fun ImageView(viewContent: JSONObject) {
     when (sourceType) {
         "remote"    -> AsyncImage(imageSource, null,
             contentScale = ContentScale.FillWidth,
-            modifier = Modifier.getModifier(viewContent).fillMaxWidth()
+            modifier = modifier.getModifier(viewContent).fillMaxWidth()
         )
         "system"    -> Icon(imageSource, viewContent)
-        else        -> Image(painterResource(id = imageSource.toInt()),null, modifier = Modifier.getModifier(viewContent))
+        else        -> Image(painterResource(id = imageSource.toInt()),null, modifier = modifier.getModifier(viewContent))
     }
 }
 
 @Composable
-fun Icon(name: String, viewContent: JSONObject) {
+fun Icon(name: String, viewContent: JSONObject, modifier: Modifier = Modifier) {
 
     val icon = when(name) {
         "house"     -> Icons.Outlined.Home
@@ -160,7 +161,7 @@ fun Icon(name: String, viewContent: JSONObject) {
     }
 
     return Icon(imageVector = icon, "",
-        modifier = Modifier.getModifier(viewContent).fillMaxWidth())
+        modifier = modifier.getModifier(viewContent).fillMaxWidth())
 }
 
 
@@ -169,12 +170,12 @@ enum class Direction {
 }
 
 @Composable
-fun StackView(viewContent: JSONObject, direction: Direction) {
+fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier = Modifier) {
 
     val views = viewContent.getJSONArray("views")
     val scrollable = viewContent.optBoolean("scrollable", false)
 
-    val appstentModifier = Modifier.getModifier(viewContent).fillMaxWidth()
+    val appstentModifier = modifier.getModifier(viewContent).fillMaxWidth()
 
     val columnModifier: Modifier = if (scrollable)
                                         appstentModifier
@@ -190,7 +191,7 @@ fun StackView(viewContent: JSONObject, direction: Direction) {
         Direction.x -> Row(
             modifier = rowModifier) {
             (0 until views.length()).forEach {
-                AppstentView(viewContent = views.getJSONObject(it))
+                AppstentView(viewContent = views.getJSONObject(it), modifier)
             }
         }
 
@@ -200,14 +201,14 @@ fun StackView(viewContent: JSONObject, direction: Direction) {
                 modifier = columnModifier
             ) {
                 (0 until views.length()).forEach {
-                    AppstentView(viewContent = views.getJSONObject(it))
+                    AppstentView(viewContent = views.getJSONObject(it), modifier)
                 }
             }
         }
 
-        Direction.z -> Box(modifier = appstentModifier) {
+        Direction.z -> Box(modifier = modifier) {
             (0 until views.length()).forEach {
-                AppstentView(viewContent = views.getJSONObject(it))
+                AppstentView(viewContent = views.getJSONObject(it), modifier.align(Alignment.Center).matchParentSize().padding(5.dp))
             }
         }
     }

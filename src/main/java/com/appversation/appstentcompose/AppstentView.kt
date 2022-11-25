@@ -175,7 +175,7 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
     val views = viewContent.getJSONArray("views")
     val scrollable = viewContent.optBoolean("scrollable", false)
 
-    val appstentModifier = modifier.getModifier(viewContent).fillMaxWidth()
+    val appstentModifier = modifier.getModifier(viewContent).fillMaxWidth().wrapContentHeight()
 
     val columnModifier: Modifier = if (scrollable)
                                         appstentModifier
@@ -206,7 +206,7 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
             }
         }
 
-        Direction.z -> Box(modifier = modifier) {
+        Direction.z -> Box(modifier = appstentModifier) {
             (0 until views.length()).forEach {
                 AppstentView(viewContent = views.getJSONObject(it), modifier.align(Alignment.Center).matchParentSize().padding(5.dp))
             }

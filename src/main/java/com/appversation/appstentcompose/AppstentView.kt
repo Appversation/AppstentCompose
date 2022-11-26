@@ -10,7 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.appversation.appstentcompose.ui.theme.AppstentTheme
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 
@@ -35,6 +36,7 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier) {
                 "hStack"    -> StackView(viewContent = viewContent, direction = Direction.x, modifier)
                 "vStack"    -> StackView(viewContent = viewContent, direction = Direction.y, modifier)
                 "zStack"    -> StackView(viewContent = viewContent, direction = Direction.z, modifier)
+                "included"  -> IncludedView(viewContent, modifier)
 
                 else -> { }
             }
@@ -211,5 +213,23 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
                 AppstentView(viewContent = views.getJSONObject(it), modifier.align(Alignment.Center).matchParentSize().padding(5.dp))
             }
         }
+    }
+}
+
+
+@Composable
+fun IncludedView(viewContent: JSONObject, modifier: Modifier = Modifier) {
+
+    if (viewContent.has("source")) {
+        val source = viewContent.getString("source")
+
+        var includedContent by remember { mutableStateOf(JSONObject())}
+        val scope = rememberCoroutineScope()
+
+        LaunchedEffect(scope) {
+            includedContent = ViewContentRepository().getContent(source)
+        }
+
+        AppstentView(viewContent = includedContent, modifier = modifier)
     }
 }

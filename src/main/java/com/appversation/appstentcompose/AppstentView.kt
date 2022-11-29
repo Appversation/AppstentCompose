@@ -3,6 +3,9 @@ package com.appversation.appstentcompose
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
@@ -17,11 +20,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.appversation.appstentcompose.ui.theme.AppstentTheme
 import kotlinx.coroutines.launch
+import org.json.JSONArray
 import org.json.JSONObject
 
 
@@ -37,6 +42,7 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier) {
                 "vStack"    -> StackView(viewContent = viewContent, direction = Direction.y, modifier)
                 "zStack"    -> StackView(viewContent = viewContent, direction = Direction.z, modifier)
                 "included"  -> IncludedView(viewContent, modifier)
+                "grid"      -> GridView(viewContent = viewContent, modifier = modifier)
 
                 else -> { }
             }
@@ -111,7 +117,9 @@ fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier) {
     when (sourceType) {
         "remote"    -> AsyncImage(imageSource, null,
             contentScale = ContentScale.FillWidth,
-            modifier = modifier.getModifier(viewContent).fillMaxWidth()
+            modifier = modifier
+                .getModifier(viewContent)
+                .fillMaxWidth()
         )
         "system"    -> Icon(imageSource, viewContent)
         else        -> Image(painterResource(id = imageSource.toInt()),null, modifier = modifier.getModifier(viewContent))
@@ -163,7 +171,9 @@ fun Icon(name: String, viewContent: JSONObject, modifier: Modifier = Modifier) {
     }
 
     return Icon(imageVector = icon, "",
-        modifier = modifier.getModifier(viewContent).fillMaxWidth())
+        modifier = modifier
+            .getModifier(viewContent)
+            .fillMaxWidth())
 }
 
 
@@ -177,7 +187,10 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
     val views = viewContent.getJSONArray("views")
     val scrollable = viewContent.optBoolean("scrollable", false)
 
-    val appstentModifier = modifier.getModifier(viewContent).fillMaxWidth().wrapContentHeight()
+    val appstentModifier = modifier
+        .getModifier(viewContent)
+        .fillMaxWidth()
+        .wrapContentHeight()
 
     val columnModifier: Modifier = if (scrollable)
                                         appstentModifier
@@ -210,7 +223,11 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
 
         Direction.z -> Box(modifier = appstentModifier) {
             (0 until views.length()).forEach {
-                AppstentView(viewContent = views.getJSONObject(it), modifier.align(Alignment.Center).matchParentSize().padding(5.dp))
+                AppstentView(viewContent = views.getJSONObject(it),
+                    modifier
+                        .align(Alignment.Center)
+                        .matchParentSize()
+                        .padding(5.dp))
             }
         }
     }
@@ -231,5 +248,99 @@ fun IncludedView(viewContent: JSONObject, modifier: Modifier = Modifier) {
         }
 
         AppstentView(viewContent = includedContent, modifier = modifier)
+    }
+}
+
+@Composable
+fun GridView(viewContent: JSONObject, modifier: Modifier = Modifier) {
+
+    val views = viewContent.getJSONArray("views")
+
+    val rowSpacing = viewContent.optInt("rowSpacing", 0)
+    val colSpacing = viewContent.optInt("colSpacing", 0)
+
+    val gridCells: GridCells = getGridCells(viewContent)
+
+    val gridType = viewContent.optString("gridType", "vertical")
+
+    if (gridType == "horizontal") {
+        val gridModifier: Modifier = modifier.verticalScroll(rememberScrollState())
+
+        LazyHorizontalGrid(rows = gridCells,
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(colSpacing.dp),
+            verticalArrangement = Arrangement.spacedBy(rowSpacing.dp)) {
+
+            items(views.length()) {
+                AppstentView(viewContent = views.getJSONObject(it), modifier)
+            }
+        }
+    } else {
+        LazyVerticalGrid(columns = gridCells,
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(colSpacing.dp),
+            verticalArrangement = Arrangement.spacedBy(rowSpacing.dp)) {
+
+            items(views.length()) {
+                AppstentView(viewContent = views.getJSONObject(it), modifier)
+            }
+        }
+    }
+}
+
+private fun getGridCells(viewContent: JSONObject): GridCells {
+
+    return if (viewContent.has("minCellWidth")) {
+
+        GridCells.Adaptive(viewContent.getInt("minCellWidth").dp)
+
+    } else if (viewContent.has("numColumns") || viewContent.has("numRows") ) {
+
+        val rowColCount = viewContent.optInt("numColumns", viewContent.optInt("numRows", 1))
+
+        GridCells.Fixed(rowColCount)
+    }
+    else {
+
+        val gridRowColConfigs: JSONArray = if (viewContent.has("columns"))
+            viewContent.getJSONArray("columns")
+        else
+            viewContent.getJSONArray("rows")
+
+        object: GridCells {
+            override fun Density.calculateCrossAxisCellSizes(
+                availableSize: Int,
+                spacing: Int
+            ): List<Int> {
+
+                var totalFixedSize = 0
+                var totalFlexibleItems = 0
+
+                // calculate totalFixedSize and totalFlexibleItems
+                (0 until gridRowColConfigs.length()).forEach {
+
+                    val rowColConfig = gridRowColConfigs.getJSONObject(it)
+                    if (rowColConfig.getString("itemType") == "fixed") {
+                        totalFixedSize += (rowColConfig.getInt("width") * density).toInt()
+                    } else {
+                        totalFlexibleItems += 1
+                    }
+                }
+
+                return (0 until gridRowColConfigs.length()).map {
+
+                    val rowColConfig = gridRowColConfigs.getJSONObject(it)
+
+                    val size = if (rowColConfig.getString("itemType") == "fixed") {
+
+                        (rowColConfig.getInt("width") * density).toInt()
+                    } else {
+                        ((availableSize - spacing) - totalFixedSize) / totalFlexibleItems
+                    }
+
+                    return@map size
+                }
+            }
+        }
     }
 }

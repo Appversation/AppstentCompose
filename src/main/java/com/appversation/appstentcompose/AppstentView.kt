@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
@@ -34,6 +35,7 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier) {
         if (viewContent.has("type")) {
             when (viewContent.getString("type")) {
                 "spacer"    -> SpacerView(viewContent, modifier)
+                "divider"   -> DividerView(viewContent, modifier)
                 "text"      -> TextView(viewContent, modifier)
                 "image"     -> ImageView(viewContent, modifier)
                 "hStack"    -> StackView(viewContent = viewContent, direction = Direction.x, modifier)
@@ -58,6 +60,14 @@ fun SpacerView(viewContent: JSONObject, modifier: Modifier = Modifier) {
     } else {
         Spacer(modifier = modifier)
     }
+}
+
+@Composable
+fun DividerView(viewContent: JSONObject, modifier: Modifier = Modifier) {
+
+    Divider(
+        modifier = modifier.getModifier(viewContent)
+    )
 }
 
 @Composable

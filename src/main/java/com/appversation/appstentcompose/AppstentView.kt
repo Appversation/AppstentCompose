@@ -1,13 +1,11 @@
 package com.appversation.appstentcompose
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -43,6 +41,7 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier) {
                 "zStack"    -> StackView(viewContent = viewContent, direction = Direction.z, modifier)
                 "included"  -> IncludedView(viewContent, modifier)
                 "grid"      -> GridView(viewContent = viewContent, modifier = modifier)
+                "list"      -> ListView(viewContent = viewContent, modifier = modifier)
 
                 else -> { }
             }
@@ -339,6 +338,51 @@ private fun getGridCells(viewContent: JSONObject): GridCells {
                     }
 
                     return@map size
+                }
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun ListView(viewContent: JSONObject, modifier: Modifier = Modifier) {
+
+    if (viewContent.has("sections")) {
+
+        val sections = viewContent.getJSONArray("sections")
+
+        LazyColumn(modifier = modifier) {
+
+            (0 until sections.length()).forEach {
+
+                val sectionObject = sections.getJSONObject(it)
+                val text = sectionObject.getString("title")
+                stickyHeader {
+                    Text(text = text,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    )
+                }
+
+                val views = sectionObject.getJSONArray("views")
+
+                (0 until views.length()).forEach {
+
+                    item {
+                        AppstentView(viewContent = views.getJSONObject(it), modifier)
+                    }
+                }
+            }
+        }
+    } else {
+        val views = viewContent.getJSONArray("views")
+
+        LazyColumn(modifier = modifier) {
+            (0 until views.length()).forEach {
+                item {
+                    AppstentView(viewContent = views.getJSONObject(it), modifier)
                 }
             }
         }

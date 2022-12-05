@@ -1,5 +1,6 @@
 package com.appversation.appstentcompose
 
+import android.support.v4.os.IResultReceiver._Parcel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding

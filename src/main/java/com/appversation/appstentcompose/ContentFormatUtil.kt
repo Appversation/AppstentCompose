@@ -1,5 +1,19 @@
 package com.appversation.appstentcompose
 
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion.Bottom
+import androidx.compose.ui.Alignment.Companion.BottomCenter
+import androidx.compose.ui.Alignment.Companion.BottomEnd
+import androidx.compose.ui.Alignment.Companion.BottomStart
+import androidx.compose.ui.Alignment.Companion.Center
+import androidx.compose.ui.Alignment.Companion.CenterHorizontally
+import androidx.compose.ui.Alignment.Companion.CenterVertically
+import androidx.compose.ui.Alignment.Companion.End
+import androidx.compose.ui.Alignment.Companion.Start
+import androidx.compose.ui.Alignment.Companion.Top
+import androidx.compose.ui.Alignment.Companion.TopCenter
+import androidx.compose.ui.Alignment.Companion.TopEnd
+import androidx.compose.ui.Alignment.Companion.TopStart
 import org.json.JSONObject
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -61,9 +75,8 @@ fun getCustomFontStyle(viewContent: JSONObject) : TextStyle {
         val decorations = viewContent.getJSONArray("textEmphasis")
 
         (0 until decorations.length()).forEach {
-            val decoration = decorations.getString(it)
 
-            when (decoration) {
+            when (decorations.getString(it)) {
                 "bold"      -> fontWeight = FontWeight.ExtraBold
                 "underline" -> textDecoration = TextDecoration.Underline
                 "italic"    -> fontStyle = FontStyle.Italic
@@ -79,4 +92,38 @@ fun getCustomFontStyle(viewContent: JSONObject) : TextStyle {
     textDecoration = textDecoration)
 
     return textStyle
+}
+
+fun getAlignment(alignmentString: String) : Alignment {
+
+    return when (alignmentString) {
+        "topLeading"    -> TopStart
+        "top"           -> TopCenter
+        "topTrailing"   -> TopEnd
+        "center"        -> Center
+        "bottomLeading" -> BottomStart
+        "bottom"        -> BottomCenter
+        "bottomTrailing"-> BottomEnd
+        else -> Alignment.Center
+    }
+}
+
+fun getVerticalAlignment(alignmentString: String) : Alignment.Vertical {
+
+    return when (alignmentString) {
+        "top"           -> Top
+        "center"        -> CenterVertically
+        "bottom"        -> Bottom
+        else -> CenterVertically
+    }
+}
+
+fun getHorizontalAlignment(alignmentString: String) : Alignment.Horizontal {
+
+    return when (alignmentString) {
+        "leading"       -> Start
+        "center"        -> CenterHorizontally
+        "trailing"      -> End
+        else -> CenterHorizontally
+    }
 }

@@ -11,7 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -212,29 +211,52 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
                                 else appstentModifier
 
     when (direction) {
-        Direction.x -> Row(
-            modifier = rowModifier) {
+        Direction.x -> Row(modifier = rowModifier) {
+
+            var alignmentVal = Alignment.CenterVertically
+
+            if (viewContent.has("alignment")) {
+                val alignmentString = viewContent.getString("alignment")
+                alignmentVal = getVerticalAlignment(alignmentString)
+            }
+
             (0 until views.length()).forEach {
-                AppstentView(viewContent = views.getJSONObject(it), modifier)
+                AppstentView(viewContent = views.getJSONObject(it),
+                    modifier.align(alignmentVal))
             }
         }
 
         Direction.y -> {
 
-            Column(
-                modifier = columnModifier
-            ) {
+            var alignmentVal = Alignment.CenterHorizontally
+
+            if (viewContent.has("alignment")) {
+                val alignmentString = viewContent.getString("alignment")
+                alignmentVal = getHorizontalAlignment(alignmentString)
+            }
+
+            Column(modifier = columnModifier) {
                 (0 until views.length()).forEach {
-                    AppstentView(viewContent = views.getJSONObject(it), modifier)
+                    AppstentView(viewContent = views.getJSONObject(it),
+                        modifier.align(alignmentVal))
                 }
             }
         }
 
         Direction.z -> Box(modifier = appstentModifier) {
+
+            var alignmentVal = Alignment.Center
+
+            if (viewContent.has("alignment")) {
+                val alignmentString = viewContent.getString("alignment")
+                alignmentVal = getAlignment(alignmentString)
+            }
+
             (0 until views.length()).forEach {
+
                 AppstentView(viewContent = views.getJSONObject(it),
                     modifier
-                        .align(Alignment.Center)
+                        .align(alignmentVal)
                         .matchParentSize()
                         .padding(5.dp))
             }

@@ -3,9 +3,11 @@ package com.appversation.appstentcompose
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -14,6 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -26,6 +29,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
 import com.appversation.appstentcompose.ui.theme.AppstentTheme
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.rememberPagerState
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.ui.StyledPlayerView
@@ -45,6 +51,7 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier) {
                 "text"      -> TextView(viewContent, modifier)
                 "image"     -> ImageView(viewContent, modifier)
                 "video"     -> VideoView(viewContent, modifier)
+                "tabbedView"-> PagerView(viewContent, modifier)
                 "hStack"    -> StackView(viewContent = viewContent, direction = Direction.x, modifier)
                 "vStack"    -> StackView(viewContent = viewContent, direction = Direction.y, modifier)
                 "zStack"    -> StackView(viewContent = viewContent, direction = Direction.z, modifier)
@@ -252,6 +259,67 @@ fun VideoView(viewContent: JSONObject, modifier: Modifier = Modifier) {
 
 enum class Direction {
     x, y, z
+}
+
+@OptIn(ExperimentalPagerApi::class)
+@Composable
+fun PagerView(viewContent: JSONObject, modifier: Modifier = Modifier) {
+    val tabs = viewContent.getJSONArray("tabs")
+
+    val pagerState = rememberPagerState()
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+
+        HorizontalPager(count = tabs.length(),
+            state = pagerState,
+            modifier = modifier.getModifier(viewContent)
+        ) { currentPage ->
+
+            val tabContent = tabs.getJSONObject(currentPage)
+
+            AppstentView(viewContent = tabContent.getJSONObject("tabContent"), modifier)
+        }
+
+        Spacer(modifier = Modifier.padding(4.dp))
+
+        Box(modifier = modifier.align(Alignment.CenterHorizontally)) {
+            DotsIndicator(totalDots = tabs.length(),
+                selectedIndex = pagerState.currentPage,
+                selectedColor =  Color(android.graphics.Color.parseColor("#666666")),
+                unSelectedColor = Color(android.graphics.Color.parseColor("#E6E6E6"))
+            )
+        }
+    }
+}
+
+@Composable
+fun DotsIndicator(totalDots : Int, selectedIndex : Int, selectedColor: Color, unSelectedColor: Color) {
+
+    LazyRow(modifier = Modifier
+        .wrapContentWidth()
+        .wrapContentHeight()
+    ) {
+
+        items(totalDots) { index ->
+            if (index == selectedIndex) {
+                Box(modifier = Modifier
+                    .size(5.dp)
+                    .clip(CircleShape)
+                    .background(selectedColor)
+                )
+            } else {
+                Box(modifier = Modifier
+                    .size(5.dp)
+                    .clip(CircleShape)
+                    .background(unSelectedColor)
+                )
+            }
+
+            if (index != totalDots - 1) {
+                Spacer(modifier = Modifier.padding(horizontal = 2.dp))
+            }
+        }
+    }
 }
 
 @Composable

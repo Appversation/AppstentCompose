@@ -17,13 +17,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
 import com.appversation.appstentcompose.ui.theme.AppstentTheme
+import com.google.android.exoplayer2.ExoPlayer
+import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.ui.StyledPlayerView
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
@@ -39,6 +44,7 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier) {
                 "gradientView" -> GradientView(viewContent, modifier)
                 "text"      -> TextView(viewContent, modifier)
                 "image"     -> ImageView(viewContent, modifier)
+                "video"     -> VideoView(viewContent, modifier)
                 "hStack"    -> StackView(viewContent = viewContent, direction = Direction.x, modifier)
                 "vStack"    -> StackView(viewContent = viewContent, direction = Direction.y, modifier)
                 "zStack"    -> StackView(viewContent = viewContent, direction = Direction.z, modifier)
@@ -214,6 +220,35 @@ fun Icon(name: String, viewContent: JSONObject, modifier: Modifier = Modifier) {
             .fillMaxWidth())
 }
 
+@Composable
+fun VideoView(viewContent: JSONObject, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+
+    //val sourceType = viewContent.getString("sourceType")
+    val videoUri = viewContent.getString("source")
+
+    val exoPlayer = ExoPlayer.Builder(LocalContext.current)
+        .build()
+        .also { exoPlayer ->
+            val mediaItem = MediaItem.Builder()
+                .setUri(videoUri)
+                .build()
+            exoPlayer.setMediaItem(mediaItem)
+            exoPlayer.prepare()
+            exoPlayer.playWhenReady = true
+        }
+
+    DisposableEffect(
+        AndroidView(factory = {
+            StyledPlayerView(context).apply {
+                useController = false
+                player = exoPlayer
+            }
+        })
+    ) {
+        onDispose { exoPlayer.release() }
+    }
+}
 
 enum class Direction {
     x, y, z

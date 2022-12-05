@@ -14,6 +14,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -35,6 +36,7 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier) {
             when (viewContent.getString("type")) {
                 "spacer"    -> SpacerView(viewContent, modifier)
                 "divider"   -> DividerView(viewContent, modifier)
+                "gradientView" -> GradientView(viewContent, modifier)
                 "text"      -> TextView(viewContent, modifier)
                 "image"     -> ImageView(viewContent, modifier)
                 "hStack"    -> StackView(viewContent = viewContent, direction = Direction.x, modifier)
@@ -66,6 +68,34 @@ fun DividerView(viewContent: JSONObject, modifier: Modifier = Modifier) {
 
     Divider(
         modifier = modifier.getModifier(viewContent)
+    )
+}
+
+@Composable
+fun GradientView(viewContent: JSONObject, modifier: Modifier = Modifier) {
+
+    val colorJSONArray = viewContent.getJSONArray("colors")
+    val colors = arrayListOf<Color>()
+    (0 until colorJSONArray.length()).forEach {
+        val colorString = colorJSONArray.getString(it)
+        colors.add(it, Color(android.graphics.Color.parseColor(colorString)))
+    }
+
+    val gradientModifier = modifier.getModifier(viewContent)
+
+    val heightModifier = if (viewContent.has("height")) {
+        val viewHeight = viewContent.getInt("height")
+
+        gradientModifier.height(viewHeight.dp)
+    } else {
+        gradientModifier.fillMaxHeight()
+    }
+
+    Spacer(
+        modifier = gradientModifier
+            .background(Brush.verticalGradient(colors))
+            .fillMaxWidth()
+            .then(heightModifier)
     )
 }
 

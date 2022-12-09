@@ -1,5 +1,6 @@
 package com.appversation.appstentcompose
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontFamily
 
 object ModuleConfigs {
@@ -11,5 +12,8 @@ object ModuleConfigs {
     interface CustomContentDataProvider {
         fun getFontFamilyFrom(name: String) : FontFamily
         fun getStringFor(fieldName: String): String
+
+        @Composable
+        fun CustomComposable(viewName: String)
     }
 }

@@ -58,6 +58,7 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier) {
                 "included"  -> IncludedView(viewContent, modifier)
                 "grid"      -> GridView(viewContent = viewContent, modifier = modifier)
                 "list"      -> ListView(viewContent = viewContent, modifier = modifier)
+                "custom"    -> ModuleConfigs.customContentDataProvider?.CustomComposable(viewContent.getString("customViewName"))
 
                 else -> { }
             }
@@ -173,6 +174,7 @@ fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier) {
                 .fillMaxWidth()
         )
         "system"    -> Icon(imageSource, viewContent)
+        "dynamic"   -> ModuleConfigs.customContentDataProvider?.CustomComposable(imageSource)
         else        -> Image(painterResource(id = imageSource.toInt()),null, modifier = modifier.getModifier(viewContent))
     }
 }

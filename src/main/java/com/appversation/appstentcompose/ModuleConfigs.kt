@@ -16,4 +16,9 @@ object ModuleConfigs {
         @Composable
         fun CustomComposable(viewName: String)
     }
+
+    interface AppstentViewNavigationProvider {
+
+        fun handleRoute(route: String)
+    }
 }

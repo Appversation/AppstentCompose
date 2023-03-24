@@ -65,7 +65,7 @@ fun JSONObject.getJSONObject(keyName: String): JSONObject {
     val key = keyName.replace("android:", "")
 
     return if (this.has(key)) {
-        JSONObject(key)
+        getJSONObject(key)
     } else {
         JSONObject()
     }

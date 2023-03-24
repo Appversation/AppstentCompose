@@ -50,8 +50,9 @@ import org.json.JSONObject
 @Composable
 fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier, navController: NavHostController? = null) {
     AppstentTheme {
-        if (viewContent.has("type")) {
-            when (viewContent.getString("type")) {
+        if (viewContent.has(keyName = "type")) {
+
+            when (viewContent.getString(keyName = "type")) {
                 "spacer"    -> SpacerView(viewContent, modifier)
                 "divider"   -> DividerView(viewContent, modifier)
                 "gradientView" -> GradientView(viewContent, modifier)
@@ -65,7 +66,7 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier, navCont
                 "included"  -> IncludedView(viewContent.optString("source", ""), modifier, navController)
                 "grid"      -> GridView(viewContent = viewContent, modifier = modifier, navController)
                 "list"      -> ListView(viewContent = viewContent, modifier = modifier, navController)
-                "custom"    -> ModuleConfigs.customContentDataProvider?.CustomComposable(viewContent.getString("customViewName"))
+                "custom"    -> ModuleConfigs.customContentDataProvider?.CustomComposable(viewContent.getString(keyName = "customViewName"))
                 "navigationView" -> NavigationApstentView(viewContent = viewContent, modifier)
                 "navigationLink" -> NavigationApstentLink(viewContent = viewContent, modifier, navController)
 
@@ -78,8 +79,8 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier, navCont
 @Composable
 fun SpacerView(viewContent: JSONObject, modifier: Modifier = Modifier) {
 
-    if (viewContent.has("minLength")) {
-        val minLength = viewContent.getDouble("minLength").toFloat()
+    if (viewContent.has(keyName = "minLength")) {
+        val minLength = viewContent.getDouble(keyName = "minLength").toFloat()
         Spacer(modifier = modifier.defaultMinSize(Dp(minLength), Dp(minLength)))
     } else {
         Spacer(modifier = modifier)
@@ -97,7 +98,7 @@ fun DividerView(viewContent: JSONObject, modifier: Modifier = Modifier) {
 @Composable
 fun GradientView(viewContent: JSONObject, modifier: Modifier = Modifier) {
 
-    val colorJSONArray = viewContent.getJSONArray("colors")
+    val colorJSONArray = viewContent.getJSONArray(keyName = "colors")
     val colors = arrayListOf<Color>()
     (0 until colorJSONArray.length()).forEach {
         val colorString = colorJSONArray.getString(it)
@@ -106,8 +107,8 @@ fun GradientView(viewContent: JSONObject, modifier: Modifier = Modifier) {
 
     val gradientModifier = modifier.getModifier(viewContent)
 
-    val heightModifier = if (viewContent.has("height")) {
-        val viewHeight = viewContent.getInt("height")
+    val heightModifier = if (viewContent.has(keyName = "height")) {
+        val viewHeight = viewContent.getInt(keyName = "height")
 
         gradientModifier.height(viewHeight.dp)
     } else {
@@ -126,25 +127,25 @@ fun GradientView(viewContent: JSONObject, modifier: Modifier = Modifier) {
 fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier) {
     var textString = ""
 
-    if (viewContent.has("text")) {
-        textString = viewContent.getString("text")
+    if (viewContent.has(keyName = "text")) {
+        textString = viewContent.getString(keyName = "text")
     }
 
-    if (viewContent.has("dynamicText")) {
-        val dynamicTextFieldName = viewContent.getString("dynamicText")
+    if (viewContent.has(keyName = "dynamicText")) {
+        val dynamicTextFieldName = viewContent.getString(keyName = "dynamicText")
         textString = ModuleConfigs.customContentDataProvider?.getStringFor(dynamicTextFieldName) ?: textString
     }
 
     //foreground color
     var color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Black
-    if (viewContent.has("foregroundColor")) {
-        val fgColor = viewContent.getString("foregroundColor")
+    if (viewContent.has(keyName = "foregroundColor")) {
+        val fgColor = viewContent.getString(keyName = "foregroundColor")
         color = Color(android.graphics.Color.parseColor(fgColor))
     }
 
     var textStyle = TextStyle.Default
-    if (viewContent.has("font")) {
-        val fontString = viewContent.getString("font")
+    if (viewContent.has(keyName = "font")) {
+        val fontString = viewContent.getString(keyName = "font")
         textStyle = when (fontString) {
             "largeTitle" -> androidx.compose.material.MaterialTheme.typography.h3
             "title" -> androidx.compose.material.MaterialTheme.typography.h4
@@ -172,8 +173,8 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier) {
 @Composable
 fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier) {
 
-    val sourceType = viewContent.getString("sourceType")
-    val imageSource = viewContent.getString("source")
+    val sourceType = viewContent.getString(keyName = "sourceType")
+    val imageSource = viewContent.getString(keyName = "source")
 
     when (sourceType) {
         "remote"    -> AsyncImage(imageSource, null,
@@ -242,8 +243,7 @@ fun Icon(name: String, viewContent: JSONObject, modifier: Modifier = Modifier) {
 fun VideoView(viewContent: JSONObject, modifier: Modifier = Modifier) {
     val context = LocalContext.current
 
-    //val sourceType = viewContent.getString("sourceType")
-    val videoUri = viewContent.getString("source")
+    val videoUri = viewContent.getString(keyName = "source")
 
     val exoPlayer = ExoPlayer.Builder(LocalContext.current)
         .build()
@@ -275,7 +275,7 @@ enum class Direction {
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun PagerView(viewContent: JSONObject, modifier: Modifier = Modifier, navController: NavHostController? = null) {
-    val tabs = viewContent.getJSONArray("tabs")
+    val tabs = viewContent.getJSONArray(keyName = "tabs")
 
     val pagerState = rememberPagerState()
 
@@ -288,7 +288,7 @@ fun PagerView(viewContent: JSONObject, modifier: Modifier = Modifier, navControl
 
             val tabContent = tabs.getJSONObject(currentPage)
 
-            AppstentView(viewContent = tabContent.getJSONObject("tabContent"), modifier, navController)
+            AppstentView(viewContent = tabContent.getJSONObject(keyName = "tabContent"), modifier, navController)
         }
 
         Spacer(modifier = Modifier.padding(4.dp))
@@ -336,8 +336,8 @@ fun DotsIndicator(totalDots : Int, selectedIndex : Int, selectedColor: Color, un
 @Composable
 fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier = Modifier, navController: NavHostController? = null) {
 
-    val views = viewContent.getJSONArray("views")
-    val scrollable = viewContent.optBoolean("scrollable", false)
+    val views = viewContent.getJSONArray(keyName = "views")
+    val scrollable = viewContent.optBoolean(keyName ="scrollable", false)
 
     val appstentModifier = modifier
         .getModifier(viewContent)
@@ -359,8 +359,8 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
 
             var alignmentVal = Alignment.CenterVertically
 
-            if (viewContent.has("alignment")) {
-                val alignmentString = viewContent.getString("alignment")
+            if (viewContent.has(keyName = "alignment")) {
+                val alignmentString = viewContent.getString(keyName = "alignment")
                 alignmentVal = getVerticalAlignment(alignmentString)
             }
 
@@ -375,8 +375,8 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
 
             var alignmentVal = Alignment.CenterHorizontally
 
-            if (viewContent.has("alignment")) {
-                val alignmentString = viewContent.getString("alignment")
+            if (viewContent.has(keyName = "alignment")) {
+                val alignmentString = viewContent.getString(keyName = "alignment")
                 alignmentVal = getHorizontalAlignment(alignmentString)
             }
 
@@ -393,8 +393,8 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
 
             var alignmentVal = Alignment.Center
 
-            if (viewContent.has("alignment")) {
-                val alignmentString = viewContent.getString("alignment")
+            if (viewContent.has(keyName = "alignment")) {
+                val alignmentString = viewContent.getString(keyName = "alignment")
                 alignmentVal = getAlignment(alignmentString)
             }
 
@@ -431,14 +431,14 @@ fun IncludedView(fromSource: String, modifier: Modifier = Modifier, navControlle
 @Composable
 fun GridView(viewContent: JSONObject, modifier: Modifier = Modifier, navController: NavHostController? = null) {
 
-    val views = viewContent.getJSONArray("views")
+    val views = viewContent.getJSONArray(keyName = "views")
 
-    val rowSpacing = viewContent.optInt("rowSpacing", 0)
-    val colSpacing = viewContent.optInt("colSpacing", 0)
+    val rowSpacing = viewContent.optInt(keyName = "rowSpacing", 0)
+    val colSpacing = viewContent.optInt(keyName = "colSpacing", 0)
 
     val gridCells: GridCells = getGridCells(viewContent)
 
-    val gridType = viewContent.optString("gridType", "vertical")
+    val gridType = viewContent.optString(keyName = "gridType", "vertical")
 
     if (gridType == "horizontal") {
         val gridModifier: Modifier = modifier.verticalScroll(rememberScrollState())
@@ -467,22 +467,22 @@ fun GridView(viewContent: JSONObject, modifier: Modifier = Modifier, navControll
 
 private fun getGridCells(viewContent: JSONObject): GridCells {
 
-    return if (viewContent.has("minCellWidth")) {
+    return if (viewContent.has(keyName = "minCellWidth")) {
 
-        GridCells.Adaptive(viewContent.getInt("minCellWidth").dp)
+        GridCells.Adaptive(viewContent.getInt(keyName = "minCellWidth").dp)
 
-    } else if (viewContent.has("numColumns") || viewContent.has("numRows") ) {
+    } else if (viewContent.has(keyName = "numColumns") || viewContent.has(keyName = "numRows") ) {
 
-        val rowColCount = viewContent.optInt("numColumns", viewContent.optInt("numRows", 1))
+        val rowColCount = viewContent.optInt(keyName = "numColumns", viewContent.optInt(keyName = "numRows", 1))
 
         GridCells.Fixed(rowColCount)
     }
     else {
 
-        val gridRowColConfigs: JSONArray = if (viewContent.has("columns"))
-            viewContent.getJSONArray("columns")
+        val gridRowColConfigs: JSONArray = if (viewContent.has(keyName = "columns"))
+            viewContent.getJSONArray(keyName = "columns")
         else
-            viewContent.getJSONArray("rows")
+            viewContent.getJSONArray(keyName = "rows")
 
         object: GridCells {
             override fun Density.calculateCrossAxisCellSizes(
@@ -497,8 +497,8 @@ private fun getGridCells(viewContent: JSONObject): GridCells {
                 (0 until gridRowColConfigs.length()).forEach {
 
                     val rowColConfig = gridRowColConfigs.getJSONObject(it)
-                    if (rowColConfig.getString("itemType") == "fixed") {
-                        totalFixedSize += (rowColConfig.getInt("width") * density).toInt()
+                    if (rowColConfig.getString(keyName = "itemType") == "fixed") {
+                        totalFixedSize += (rowColConfig.getInt(keyName = "width") * density).toInt()
                     } else {
                         totalFlexibleItems += 1
                     }
@@ -508,9 +508,9 @@ private fun getGridCells(viewContent: JSONObject): GridCells {
 
                     val rowColConfig = gridRowColConfigs.getJSONObject(it)
 
-                    val size = if (rowColConfig.getString("itemType") == "fixed") {
+                    val size = if (rowColConfig.getString(keyName = "itemType") == "fixed") {
 
-                        (rowColConfig.getInt("width") * density).toInt()
+                        (rowColConfig.getInt(keyName = "width") * density).toInt()
                     } else {
                         ((availableSize - spacing) - totalFixedSize) / totalFlexibleItems
                     }
@@ -527,16 +527,16 @@ private fun getGridCells(viewContent: JSONObject): GridCells {
 @Composable
 fun ListView(viewContent: JSONObject, modifier: Modifier = Modifier, navController: NavHostController? = null) {
 
-    if (viewContent.has("sections")) {
+    if (viewContent.has(keyName = "sections")) {
 
-        val sections = viewContent.getJSONArray("sections")
+        val sections = viewContent.getJSONArray(keyName = "sections")
 
         LazyColumn(modifier = modifier) {
 
             (0 until sections.length()).forEach {
 
                 val sectionObject = sections.getJSONObject(it)
-                val text = sectionObject.getString("title")
+                val text = sectionObject.getString(keyName = "title")
                 stickyHeader {
                     Text(text = text,
                         modifier = Modifier
@@ -544,7 +544,7 @@ fun ListView(viewContent: JSONObject, modifier: Modifier = Modifier, navControll
                     )
                 }
 
-                val views = sectionObject.getJSONArray("views")
+                val views = sectionObject.getJSONArray(keyName = "views")
 
                 (0 until views.length()).forEach {
 
@@ -555,7 +555,7 @@ fun ListView(viewContent: JSONObject, modifier: Modifier = Modifier, navControll
             }
         }
     } else {
-        val views = viewContent.getJSONArray("views")
+        val views = viewContent.getJSONArray(keyName = "views")
 
         LazyColumn(modifier = modifier) {
             (0 until views.length()).forEach {
@@ -570,8 +570,8 @@ fun ListView(viewContent: JSONObject, modifier: Modifier = Modifier, navControll
 @Composable
 fun NavigationApstentView(viewContent: JSONObject, modifier: Modifier = Modifier) {
 
-    val views = viewContent.getJSONArray("views")
-    val navTitle = viewContent.optString("navLinkDestination", "")
+    val views = viewContent.getJSONArray(keyName = "views")
+    val navTitle = viewContent.optString(keyName = "navLinkDestination", "")
 
     val navController = rememberNavController()
 
@@ -608,25 +608,25 @@ private fun CurrentNavScreenContent(views: JSONArray, modifier: Modifier = Modif
 private fun navigationComposable(viewContent: JSONObject, modifier: Modifier = Modifier, navGraphBuilder: NavGraphBuilder) {
 
 
-    if (!viewContent.has("views")) {
+    if (!viewContent.has(keyName = "views")) {
         return
     }
 
-    val views = viewContent.getJSONArray("views")
+    val views = viewContent.getJSONArray(keyName = "views")
 
     (0 until views.length()).forEach {
 
         val viewContentIt = views.getJSONObject(it)
 
-        if (viewContentIt.optString("type", "") == "navigationLink" &&
-            viewContentIt.has("route")) {
+        if (viewContentIt.optString(keyName = "type", "") == "navigationLink" &&
+            viewContentIt.has(keyName = "route")) {
 
-            val route = viewContentIt.getString("route")
+            val route = viewContentIt.getString(keyName = "route")
 
             navGraphBuilder.composable(route) {
                 IncludedView(fromSource = route, modifier)
             }
-        } else if (viewContentIt.has("views")) {
+        } else if (viewContentIt.has(keyName = "views")) {
             navigationComposable(viewContentIt, modifier, navGraphBuilder)
         }
     }
@@ -635,8 +635,8 @@ private fun navigationComposable(viewContent: JSONObject, modifier: Modifier = M
 @Composable
 fun NavigationApstentLink(viewContent: JSONObject, modifier: Modifier = Modifier, navController: NavHostController? = null) {
 
-    val triggerView = viewContent.getJSONObject("triggerView")
-    val route = viewContent.getString("route")
+    val triggerView = viewContent.getJSONObject(keyName = "triggerView")
+    val route = viewContent.getString(keyName = "route")
 
     val navLinkModifier = modifier
         .clickable {

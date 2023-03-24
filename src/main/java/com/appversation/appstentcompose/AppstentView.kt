@@ -176,9 +176,15 @@ fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier) {
     val sourceType = viewContent.getString(keyName = "sourceType")
     val imageSource = viewContent.getString(keyName = "source")
 
+    val scalingMode = if (viewContent.getString(keyName = "scalingMode") == "scaledToFill") {
+        ContentScale.Crop
+    } else {
+        ContentScale.FillWidth
+    }
+
     when (sourceType) {
         "remote"    -> AsyncImage(imageSource, null,
-            contentScale = ContentScale.FillWidth,
+            contentScale = scalingMode,
             modifier = modifier
                 .getModifier(viewContent)
                 .fillMaxWidth()

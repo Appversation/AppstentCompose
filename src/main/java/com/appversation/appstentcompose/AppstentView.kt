@@ -45,12 +45,14 @@ import com.google.android.exoplayer2.ui.StyledPlayerView
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 @Composable
 fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier, navController: NavHostController? = null) {
     AppstentTheme {
-        if (viewContent.has(keyName = "type")) {
+        if (viewContent.has(keyName = "type") && isVisible(viewContent)) {
 
             when (viewContent.getString(keyName = "type")) {
                 "spacer"    -> SpacerView(viewContent, modifier)
@@ -74,6 +76,87 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier, navCont
             }
         }
     }
+}
+
+private fun isVisible(viewContent: JSONObject) : Boolean {
+
+    var isVisible = true
+
+    if (!viewContent.has(keyName = "visibility")) {
+        return isVisible
+    }
+
+    val visibilityRules = viewContent.getJSONArray(keyName = "visibility")
+
+    (0 until visibilityRules.length()).forEach {
+        val visibilityRule = visibilityRules.getJSONObject(it)
+
+        val ruleName = visibilityRule.getString(keyName = "ruleName")
+        val ruleValue = visibilityRule.getString(keyName = "ruleValue")
+
+        isVisible = isVisible && ModuleConfigs.customContentDataProvider?.visibility(ruleName, ruleValue) ?: true
+
+        when (ruleName) {
+            "daily" -> {
+
+                val startTimeOfDayString = visibilityRule.getString(keyName = "starts")
+                val endTimeOfDayString = visibilityRule.getString(keyName = "end")
+
+                val dateFormatter = SimpleDateFormat("HH:mm", Locale.US)
+
+                val calendar = Calendar.getInstance()
+
+                if (startTimeOfDayString.isNotEmpty() && endTimeOfDayString.isNotEmpty()) {
+                    val scheduledStart = dateFormatter.parse(startTimeOfDayString)
+                    val scheduledEnd = dateFormatter.parse(endTimeOfDayString)
+
+                    val now = Date()
+
+                    val scheduledStartTimeComponents = calendar.apply {
+                        if (scheduledStart != null) {
+                            time = scheduledStart
+                        }
+                    }.get(Calendar.HOUR_OF_DAY) to calendar.get(Calendar.MINUTE)
+                    val currentTimeComponents = calendar.apply { time = now }.get(Calendar.HOUR_OF_DAY) to calendar.get(Calendar.MINUTE)
+                    val scheduledEndTimeComponents = calendar.apply {
+                        if (scheduledEnd != null) {
+                            time = scheduledEnd
+                        }
+                    }.get(Calendar.HOUR_OF_DAY) to calendar.get(Calendar.MINUTE)
+
+                    val scheduledStartTimeInMinutes = (scheduledStartTimeComponents.first ?: 0) * 60 + (scheduledStartTimeComponents.second ?: 0)
+                    val currentTimeComponentsInMinutes = (currentTimeComponents.first ?: 0) * 60 + (currentTimeComponents.second ?: 0)
+                    val scheduledEndTimeInMinutes = (scheduledEndTimeComponents.first ?: 0) * 60 + (scheduledEndTimeComponents.second ?: 0)
+
+                    isVisible = currentTimeComponentsInMinutes in scheduledStartTimeInMinutes..scheduledEndTimeInMinutes
+                }
+            }
+
+            "schedule" -> {
+                val scheduleStartString = visibilityRule.getString(keyName = "starts")
+                val scheduleDuration = visibilityRule.getDouble(keyName = "duration")
+
+                val dateFormatter = SimpleDateFormat("MM/dd/yyyy HH:mm:ss", Locale.US)
+
+                if (scheduleStartString.isNotEmpty()) {
+                    val scheduledStart = dateFormatter.parse(scheduleStartString)
+
+                    val now = Date()
+
+                    val visibility = now >= scheduledStart
+
+                    if (scheduledStart?.time != null) {
+                        val scheduledEnd =
+                            Date(scheduledStart.time + (scheduleDuration * 60 * 1000).toLong())
+
+                        isVisible = visibility && now < scheduledEnd
+                    }
+                }
+            }
+        }
+    }
+    
+    return isVisible
 }
 
 @Composable

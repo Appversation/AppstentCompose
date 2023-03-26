@@ -15,6 +15,8 @@ object ModuleConfigs {
 
         @Composable
         fun CustomComposable(viewName: String)
+
+        fun visibility(ruleName: String, ruleValue: String): Boolean
     }
 
     interface AppstentViewNavigationProvider {

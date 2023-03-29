@@ -8,6 +8,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.BottomNavigation
+import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -29,10 +32,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.appversation.appstentcompose.ui.theme.AppstentTheme
@@ -61,7 +67,14 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier, navCont
                 "text"      -> TextView(viewContent, modifier)
                 "image"     -> ImageView(viewContent, modifier)
                 "video"     -> VideoView(viewContent, modifier)
-                "tabbedView"-> PagerView(viewContent, modifier, navController)
+                "tabbedView"-> {
+                    val tabStyle = viewContent.getString(keyName = "tabStyle")
+                    if (tabStyle == "pageStyle") {
+                        PagerView(viewContent, modifier, navController)
+                    } else {
+                        BottomBar(viewContent, modifier)
+                    }
+                }
                 "hStack"    -> StackView(viewContent = viewContent, direction = Direction.x, modifier, navController)
                 "vStack"    -> StackView(viewContent = viewContent, direction = Direction.y, modifier, navController)
                 "zStack"    -> StackView(viewContent = viewContent, direction = Direction.z, modifier, navController)
@@ -155,7 +168,7 @@ private fun isVisible(viewContent: JSONObject) : Boolean {
             }
         }
     }
-    
+
     return isVisible
 }
 
@@ -733,4 +746,67 @@ fun NavigationApstentLink(viewContent: JSONObject, modifier: Modifier = Modifier
         }
 
     AppstentView(viewContent = triggerView, navLinkModifier, navController)
+}
+
+@Composable
+fun BottomBar(viewContent: JSONObject, modifier: Modifier = Modifier) {
+
+    val tabs = viewContent.getJSONArray(keyName = "tabs")
+
+    if (tabs.length() <= 0) {
+        return
+    }
+
+    val firstTabTitle = tabs.getJSONObject(0).getString(keyName = "title")
+    val navController = rememberNavController()
+
+    Scaffold(
+        bottomBar = {
+            BottomNavigation {
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentDestination = navBackStackEntry?.destination
+                (0 until tabs.length()).forEach {
+
+                    val tab = tabs.getJSONObject(it)
+                    val title = tab.getString(keyName = "title")
+                    val icon = tab.getJSONObject(keyName = "icon")
+
+                    BottomNavigationItem(
+                        icon = { AppstentView(viewContent = icon) },
+                        label = { Text(title) },
+                        selected = currentDestination?.hierarchy?.any { it.route == title } == true,
+                        onClick = {
+                            navController.navigate(title) {
+                                // Pop up to the start destination of the graph to
+                                // avoid building up a large stack of destinations
+                                // on the back stack as users select items
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                // Avoid multiple copies of the same destination when
+                                // reselecting the same item
+                                launchSingleTop = true
+                                // Restore state when reselecting a previously selected item
+                                restoreState = true
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    ) { innerPadding ->
+        NavHost(navController, startDestination = firstTabTitle, Modifier.padding(innerPadding)) {
+
+            (0 until tabs.length()).forEach {
+
+                val tab = tabs.getJSONObject(it)
+                val title = tab.getString(keyName = "title")
+                val tabContent = tab.getJSONObject(keyName = "tabContent")
+
+                composable(title) {
+                    AppstentView(viewContent = tabContent, modifier = modifier, navController = navController)
+                }
+            }
+        }
+    }
 }

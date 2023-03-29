@@ -9,52 +9,65 @@ fun JSONObject.has(keyName: String) : Boolean {
 
 fun JSONObject.getString(keyName: String): String {
 
-    val key = keyName.replace("android:", "")
+    val androidKeyValue = optString("android:$keyName")
 
-    return optString(key)
+    return androidKeyValue.ifEmpty {
+        optString(keyName)
+    }
 }
 
 fun JSONObject.optString(keyName: String, fallback: String): String {
 
-    val key = keyName.replace("android:", "")
+    val androidKeyValue = optString("android:$keyName")
 
-    return optString(key, fallback)
+    return androidKeyValue.ifEmpty {
+        optString(keyName, fallback)
+    }
 }
 
 fun JSONObject.getDouble(keyName: String): Double {
 
-    val key = keyName.replace("android:", "")
-
-    return optDouble(key)
+    return if (this.has("android:$keyName")) {
+        optDouble("android:$keyName")
+    } else {
+        optDouble(keyName)
+    }
 }
 
 fun JSONObject.getInt(keyName: String): Int {
 
-    val key = keyName.replace("android:", "")
-
-    return optInt(key)
+    return if (this.has("android:$keyName")) {
+        getInt("android:$keyName")
+    } else {
+        getInt(keyName)
+    }
 }
 
 fun JSONObject.optInt(keyName: String, fallback: Int): Int {
 
-    val key = keyName.replace("android:", "")
-
-    return optInt(key, fallback)
+    return if (this.has("android:$keyName")) {
+        optInt("android:$keyName", fallback)
+    } else {
+        optInt(keyName, fallback)
+    }
 }
 
 fun JSONObject.optBoolean(keyName: String, fallback: Boolean): Boolean {
 
-    val key = keyName.replace("android:", "")
-
-    return optBoolean(key, false)
+    return if (this.has("android:$keyName")) {
+        optBoolean("android:$keyName", false)
+    } else {
+        optBoolean(keyName, false)
+    }
 }
 
 fun JSONObject.getJSONArray(keyName: String): JSONArray {
 
-    val key = keyName.replace("android:", "")
-
-    return if (this.has(key)) {
-        getJSONArray(key)
+    return if (this.has("android:$keyName")) {
+        getJSONArray("android:$keyName")
+    }
+    else if (this.has(keyName)) {
+        getJSONArray(keyName)
     } else {
         JSONArray()
     }
@@ -62,10 +75,11 @@ fun JSONObject.getJSONArray(keyName: String): JSONArray {
 
 fun JSONObject.getJSONObject(keyName: String): JSONObject {
 
-    val key = keyName.replace("android:", "")
-
-    return if (this.has(key)) {
-        getJSONObject(key)
+    return if (this.has("android:$keyName")) {
+        getJSONObject("android:$keyName")
+    }
+    else if (this.has(keyName)) {
+        getJSONObject(keyName)
     } else {
         JSONObject()
     }

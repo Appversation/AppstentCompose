@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -19,8 +20,9 @@ fun Modifier.getModifier(modifierContent: JSONObject) : Modifier {
         .getPaddingModifier(modifierContent)
         .getFrameSizeModifier(modifierContent)
         .getOffsetModifier(modifierContent)
-        .getBackgroundModifier(modifierContent)
         .getClipShapeModifier(modifierContent)
+        .getCornerRadiusModifier(modifierContent)
+        .getBackgroundModifier(modifierContent)
 }
 
 fun Modifier.getClipShapeModifier(modifierContent: JSONObject) : Modifier {
@@ -30,6 +32,16 @@ fun Modifier.getClipShapeModifier(modifierContent: JSONObject) : Modifier {
             "circle" -> this.clip(CircleShape)
             else -> this
         }
+    } catch (e: JSONException) {
+        this
+    }
+}
+
+fun Modifier.getCornerRadiusModifier(modifierContent: JSONObject) : Modifier {
+
+    return try {
+        val cornerRadius = modifierContent.getInt(keyName = "cornerRadius")
+        this.clip(RoundedCornerShape(cornerRadius.dp))
     } catch (e: JSONException) {
         this
     }

@@ -499,7 +499,7 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
             }
         }
 
-        Direction.z -> Box(modifier = appstentModifier) {
+        Direction.z -> {
 
             var alignmentVal = Alignment.Center
 
@@ -508,14 +508,20 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
                 alignmentVal = getAlignment(alignmentString)
             }
 
-            (0 until views.length()).forEach {
+            //FIXME: nested box alignment not working
 
-                AppstentView(viewContent = views.getJSONObject(it),
-                    modifier
-                        .align(alignmentVal)
-                        .matchParentSize()
-                        .padding(5.dp)
-                , navController)
+            Box(modifier = appstentModifier,
+                contentAlignment = alignmentVal) {
+
+                (0 until views.length()).forEach {
+
+                    AppstentView(viewContent = views.getJSONObject(it),
+                        modifier
+                            .align(alignmentVal)
+                            .matchParentSize()
+                            .padding(5.dp)
+                        , navController)
+                }
             }
         }
     }

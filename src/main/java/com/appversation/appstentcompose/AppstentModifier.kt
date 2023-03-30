@@ -26,8 +26,7 @@ fun Modifier.getModifier(modifierContent: JSONObject) : Modifier {
 fun Modifier.getClipShapeModifier(modifierContent: JSONObject) : Modifier {
 
     return try {
-        val shapeName = modifierContent.getString("clipShape")
-        when (shapeName) {
+        when (modifierContent.getString("clipShape")) {
             "circle" -> this.clip(CircleShape)
             else -> this
         }

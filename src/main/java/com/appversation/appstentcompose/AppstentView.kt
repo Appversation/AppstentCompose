@@ -335,10 +335,18 @@ fun Icon(name: String, viewContent: JSONObject, modifier: Modifier = Modifier) {
         else        ->  Icons.Outlined.Warning
     }
 
+    //foreground color
+    var color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Black
+    if (viewContent.has(keyName = "foregroundColor")) {
+        val fgColor = viewContent.getString(keyName = "foregroundColor")
+        color = Color(android.graphics.Color.parseColor(fgColor))
+    }
+
     return Icon(imageVector = icon, "",
         modifier = modifier
             .getModifier(viewContent)
-            .fillMaxWidth())
+            .fillMaxWidth(),
+        tint = color)
 }
 
 @Composable

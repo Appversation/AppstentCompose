@@ -16,11 +16,11 @@ import org.json.JSONObject
 fun Modifier.getModifier(modifierContent: JSONObject) : Modifier {
 
     return this
-        .getBackgroundModifier(modifierContent)
-        .getClipShapeModifier(modifierContent)
         .getPaddingModifier(modifierContent)
         .getFrameSizeModifier(modifierContent)
         .getOffsetModifier(modifierContent)
+        .getBackgroundModifier(modifierContent)
+        .getClipShapeModifier(modifierContent)
 }
 
 fun Modifier.getClipShapeModifier(modifierContent: JSONObject) : Modifier {

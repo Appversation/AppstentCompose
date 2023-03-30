@@ -105,7 +105,7 @@ private fun isVisible(viewContent: JSONObject) : Boolean {
         val visibilityRule = visibilityRules.getJSONObject(it)
 
         val ruleName = visibilityRule.getString(keyName = "ruleName")
-        val ruleValue = visibilityRule.getString(keyName = "ruleValue")
+        val ruleValue = visibilityRule.optString(keyName = "ruleValue", "")
 
         isVisible = isVisible && ModuleConfigs.customContentDataProvider?.visibility(ruleName, ruleValue) ?: true
 
@@ -272,7 +272,7 @@ fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier) {
     val sourceType = viewContent.getString(keyName = "sourceType")
     val imageSource = viewContent.getString(keyName = "source")
 
-    val scalingMode = if (viewContent.getString(keyName = "scalingMode") == "scaledToFill") {
+    val scalingMode = if (viewContent.optString(keyName = "scalingMode", "") == "scaledToFill") {
         ContentScale.Crop
     } else {
         ContentScale.FillWidth

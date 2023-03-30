@@ -28,7 +28,7 @@ fun Modifier.getModifier(modifierContent: JSONObject) : Modifier {
 fun Modifier.getClipShapeModifier(modifierContent: JSONObject) : Modifier {
 
     return try {
-        when (modifierContent.getString("clipShape")) {
+        when (modifierContent.getString(keyName = "clipShape")) {
             "circle" -> this.clip(CircleShape)
             else -> this
         }
@@ -60,7 +60,7 @@ fun Modifier.getBackgroundModifier(modifierContent: JSONObject) : Modifier {
 fun Modifier.getPaddingModifier(modifierContent: JSONObject) : Modifier {
 
     return try {
-        val padding = modifierContent.getInt("padding")
+        val padding = modifierContent.getInt(keyName = "padding")
         this.padding(padding.dp)
     } catch (e: JSONException) {
         this
@@ -70,11 +70,11 @@ fun Modifier.getPaddingModifier(modifierContent: JSONObject) : Modifier {
 fun Modifier.getFrameSizeModifier(modifierContent: JSONObject) : Modifier {
 
     return try {
-        if (modifierContent.has("width") || modifierContent.has("height")) {
-            val width = modifierContent.getDouble("width")
+        if (modifierContent.has(keyName = "width") || modifierContent.has(keyName = "height")) {
+            val width = modifierContent.getDouble(keyName = "width")
 
-            val height = if (modifierContent.has("height"))
-                            modifierContent.getDouble("height")
+            val height = if (modifierContent.has(keyName = "height"))
+                            modifierContent.getDouble(keyName = "height")
                         else
                             width
 
@@ -90,8 +90,8 @@ fun Modifier.getOffsetModifier(modifierContent: JSONObject) : Modifier {
 
     return try {
 
-        val offsetX = modifierContent.optDouble("offsetX", 0.0)
-        val offsetY = modifierContent.optDouble("offsetY", 0.0)
+        val offsetX = modifierContent.optDouble(keyName = "offsetX", 0.0)
+        val offsetY = modifierContent.optDouble(keyName = "offsetY", 0.0)
 
         return this.offset(x = offsetX.dp, y= offsetY.dp)
 

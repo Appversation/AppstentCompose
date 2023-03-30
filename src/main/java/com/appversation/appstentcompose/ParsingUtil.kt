@@ -9,10 +9,10 @@ fun JSONObject.has(keyName: String) : Boolean {
 
 fun JSONObject.getString(keyName: String): String {
 
-    val androidKeyValue = optString("android:$keyName")
-
-    return androidKeyValue.ifEmpty {
-        optString(keyName)
+    return if (this.has("android:$keyName")) {
+        getString("android:$keyName")
+    } else {
+        getString(keyName)
     }
 }
 
@@ -28,9 +28,18 @@ fun JSONObject.optString(keyName: String, fallback: String): String {
 fun JSONObject.getDouble(keyName: String): Double {
 
     return if (this.has("android:$keyName")) {
-        optDouble("android:$keyName")
+        getDouble("android:$keyName")
     } else {
-        optDouble(keyName)
+        getDouble(keyName)
+    }
+}
+
+fun JSONObject.optDouble(keyName: String, fallback: Double): Double {
+
+    return if (this.has("android:$keyName")) {
+        optDouble("android:$keyName", fallback)
+    } else {
+        optDouble(keyName, fallback)
     }
 }
 

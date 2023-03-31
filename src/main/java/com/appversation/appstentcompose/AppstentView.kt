@@ -1,5 +1,11 @@
 package com.appversation.appstentcompose
 
+import android.annotation.SuppressLint
+import android.graphics.Bitmap
+import android.view.ViewGroup
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -67,6 +73,7 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier, navCont
                 "text"      -> TextView(viewContent, modifier)
                 "image"     -> ImageView(viewContent, modifier)
                 "video"     -> VideoView(viewContent, modifier)
+                "webView"   -> WebView(viewContent = viewContent, modifier = modifier)
                 "tabbedView"-> {
                     val tabStyle = viewContent.getString(keyName = "tabStyle")
                     if (tabStyle == "pageStyle") {
@@ -375,6 +382,48 @@ fun VideoView(viewContent: JSONObject, modifier: Modifier = Modifier) {
         })
     ) {
         onDispose { exoPlayer.release() }
+    }
+}
+
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+fun WebView(viewContent: JSONObject, modifier: Modifier = Modifier) {
+
+    val sourceType = viewContent.optString(keyName = "sourceType", "")
+    val source = viewContent.getString(keyName = "source")
+
+    var backEnabled by remember { mutableStateOf(false) }
+    var webView: WebView? = null
+
+    AndroidView(
+        modifier = modifier,
+        factory = { context ->
+            WebView(context).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                webViewClient = object : WebViewClient() {
+                    override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
+                        backEnabled = view.canGoBack()
+                    }
+                }
+                settings.javaScriptEnabled = true
+
+                if (sourceType == "embedded") {
+                    loadData(source, "text/html; charset=UTF-8", null)
+                } else {
+                    loadUrl(source)
+                }
+
+                webView = this
+            }
+        }, update = {
+            webView = it
+        })
+
+    BackHandler(enabled = backEnabled) {
+        webView?.goBack()
     }
 }
 

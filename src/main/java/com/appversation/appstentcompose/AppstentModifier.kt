@@ -2,9 +2,7 @@ package com.appversation.appstentcompose
 
 import android.support.v4.os.IResultReceiver._Parcel
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Modifier
@@ -50,7 +48,7 @@ fun Modifier.getCornerRadiusModifier(modifierContent: JSONObject) : Modifier {
 fun Modifier.getBackgroundModifier(modifierContent: JSONObject) : Modifier {
 
     return try {
-        val bgColor = modifierContent.getString("backgroundColor")
+        val bgColor = modifierContent.getString(keyName = "backgroundColor")
         this.background(Color(android.graphics.Color.parseColor(bgColor)))
     } catch (e: JSONException) {
         this
@@ -69,18 +67,24 @@ fun Modifier.getPaddingModifier(modifierContent: JSONObject) : Modifier {
 
 fun Modifier.getFrameSizeModifier(modifierContent: JSONObject) : Modifier {
 
+    var modifier: Modifier = this
+
     return try {
-        if (modifierContent.has(keyName = "width") || modifierContent.has(keyName = "height")) {
-            val width = modifierContent.getDouble(keyName = "width")
 
-            val height = if (modifierContent.has(keyName = "height"))
-                            modifierContent.getDouble(keyName = "height")
-                        else
-                            width
+        if (modifierContent.has(keyName = "width")) {
 
-            return this.size(width.dp, height.dp)
-        } else
-            this
+                val width = modifierContent.getDouble(keyName = "width")
+
+            modifier = this.requiredWidth(width.dp)
+        }
+
+        if (modifierContent.has(keyName = "height")) {
+            val height = modifierContent.getDouble(keyName = "height")
+
+            modifier = this.requiredHeight(height.dp)
+        }
+
+        return modifier
     } catch (e: JSONException) {
         this
     }

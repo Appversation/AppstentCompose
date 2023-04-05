@@ -513,8 +513,35 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
                                         .horizontalScroll(rememberScrollState())
                                 else appstentModifier
 
+    var horizontalArrangement: Arrangement.Horizontal = Arrangement.SpaceBetween
+    var verticalArrangement: Arrangement.Vertical = Arrangement.SpaceBetween
+
+    if (viewContent.has(keyName = "arrangement")) {
+
+        when (viewContent.getString(keyName = "arrangement")) {
+            "spaceBetween" -> {
+                horizontalArrangement = Arrangement.SpaceBetween
+                verticalArrangement = Arrangement.SpaceBetween
+            }
+            "spaceAround" -> {
+                horizontalArrangement = Arrangement.SpaceAround
+                verticalArrangement = Arrangement.SpaceAround
+            }
+            "spaceEvenly" -> {
+                horizontalArrangement = Arrangement.SpaceEvenly
+                verticalArrangement = Arrangement.SpaceEvenly
+            }
+            "start" -> horizontalArrangement = Arrangement.Start
+            "end"   -> horizontalArrangement = Arrangement.End
+            "top"   -> verticalArrangement = Arrangement.Top
+            "bottom" -> verticalArrangement = Arrangement.Bottom
+        }
+
+    }
+
     when (direction) {
-        Direction.x -> Row(modifier = rowModifier) {
+        Direction.x -> Row(modifier = rowModifier,
+                horizontalArrangement = horizontalArrangement) {
 
             var alignmentVal = Alignment.CenterVertically
 
@@ -539,7 +566,8 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
                 alignmentVal = getHorizontalAlignment(alignmentString)
             }
 
-            Column(modifier = columnModifier) {
+            Column(modifier = columnModifier,
+                verticalArrangement = verticalArrangement) {
                 (0 until views.length()).forEach {
                     AppstentView(viewContent = views.getJSONObject(it),
                         modifier.align(alignmentVal),

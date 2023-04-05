@@ -182,12 +182,23 @@ private fun isVisible(viewContent: JSONObject) : Boolean {
 @Composable
 fun SpacerView(viewContent: JSONObject, modifier: Modifier = Modifier) {
 
+    var spacerModifier = modifier
+
     if (viewContent.has(keyName = "minLength")) {
         val minLength = viewContent.getDouble(keyName = "minLength").toFloat()
-        Spacer(modifier = modifier.defaultMinSize(Dp(minLength), Dp(minLength)))
-    } else {
-        Spacer(modifier = modifier)
+        spacerModifier = modifier.defaultMinSize(Dp(minLength), Dp(minLength))
     }
+
+    if (viewContent.has(keyName = "fillModifier")) {
+
+        when (viewContent.getString(keyName = "fillModifier")) {
+            "fillMaxWidth" -> spacerModifier = modifier.fillMaxWidth()
+            "fillMaxHeight" -> spacerModifier = modifier.fillMaxHeight()
+            "fillMaxSize" -> spacerModifier = modifier.fillMaxSize()
+        }
+    }
+
+    Spacer(modifier = spacerModifier)
 }
 
 @Composable

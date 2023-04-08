@@ -293,7 +293,7 @@ fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier) {
     val scalingMode = if (viewContent.optString(keyName = "scalingMode", "") == "scaledToFill") {
         ContentScale.Crop
     } else {
-        ContentScale.FillWidth
+        ContentScale.Fit
     }
 
     when (sourceType) {
@@ -301,7 +301,7 @@ fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier) {
             contentScale = scalingMode,
             modifier = modifier
                 .getModifier(viewContent)
-                .fillMaxWidth()
+
         )
         "system"    -> Icon(imageSource, viewContent)
         "dynamic"   -> ModuleConfigs.customContentDataProvider?.CustomComposable(imageSource)
@@ -362,8 +362,7 @@ fun Icon(name: String, viewContent: JSONObject, modifier: Modifier = Modifier) {
 
     return Icon(imageVector = icon, "",
         modifier = modifier
-            .getModifier(viewContent)
-            .fillMaxWidth(),
+            .getModifier(viewContent),
         tint = color)
 }
 
@@ -390,7 +389,9 @@ fun VideoView(viewContent: JSONObject, modifier: Modifier = Modifier) {
                 useController = false
                 player = exoPlayer
             }
-        })
+        },
+        modifier = modifier
+            .getModifier(viewContent))
     ) {
         onDispose { exoPlayer.release() }
     }
@@ -463,7 +464,8 @@ fun PagerView(viewContent: JSONObject, modifier: Modifier = Modifier, navControl
 
         Spacer(modifier = Modifier.padding(4.dp))
 
-        Box(modifier = modifier.align(Alignment.CenterHorizontally)) {
+        Box(modifier = modifier.align(Alignment.CenterHorizontally),
+            contentAlignment = Alignment.Center) {
             DotsIndicator(totalDots = tabs.length(),
                 selectedIndex = pagerState.currentPage,
                 selectedColor =  Color(android.graphics.Color.parseColor("#666666")),
@@ -598,7 +600,9 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
 
             //FIXME: nested box alignment not working
 
-            Box(modifier = appstentModifier,
+            Box(modifier = modifier
+                .getModifier(viewContent)
+                .wrapContentHeight(),
                 contentAlignment = alignmentVal) {
 
                 (0 until views.length()).forEach {
@@ -743,9 +747,7 @@ fun ListView(viewContent: JSONObject, modifier: Modifier = Modifier, navControll
                 val text = sectionObject.getString(keyName = "title")
                 stickyHeader {
                     Text(text = text,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    )
+                        modifier = Modifier.getModifier(viewContent))
                 }
 
                 val views = sectionObject.getJSONArray(keyName = "views")

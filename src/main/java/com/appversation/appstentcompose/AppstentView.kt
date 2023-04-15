@@ -611,7 +611,6 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
                         modifier
                             .align(alignmentVal)
                             .matchParentSize()
-                            .padding(5.dp)
                         , navController)
                 }
             }

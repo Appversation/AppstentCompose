@@ -75,7 +75,7 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier, navCont
                 "video"     -> VideoView(viewContent, modifier)
                 "webView"   -> WebView(viewContent = viewContent, modifier = modifier)
                 "tabbedView"-> {
-                    val tabStyle = viewContent.getString(keyName = "tabStyle")
+                    val tabStyle = viewContent.optString(keyName = "tabStyle", fallback = "")
                     if (tabStyle == "pageStyle") {
                         PagerView(viewContent, modifier, navController)
                     } else {

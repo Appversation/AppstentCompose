@@ -71,19 +71,19 @@ fun Modifier.getFrameSizeModifier(modifierContent: JSONObject) : Modifier {
 
     return try {
 
-        if (modifierContent.has(keyName = "width")) {
+        modifier = if (modifierContent.has(keyName = "width")) {
 
             val width = modifierContent.getDouble(keyName = "width")
 
-            modifier = this.requiredWidth(width.dp)
+            modifier.requiredWidth(width.dp)
         } else {
-            modifier = this.fillMaxWidth()
+            modifier.fillMaxWidth()
         }
 
         if (modifierContent.has(keyName = "height")) {
             val height = modifierContent.getDouble(keyName = "height")
 
-            modifier = this.requiredHeight(height.dp)
+            modifier = modifier.requiredHeight(height.dp)
         }
 
         modifier

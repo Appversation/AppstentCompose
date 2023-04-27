@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.view.ViewGroup
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -36,8 +37,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
@@ -51,10 +50,13 @@ import com.appversation.appstentcompose.ui.theme.AppstentTheme
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
+import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.ui.AspectRatioFrameLayout.RESIZE_MODE_FILL
+import com.google.android.exoplayer2.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
 import com.google.android.exoplayer2.ui.StyledPlayerView
-import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -370,7 +372,29 @@ fun Icon(name: String, viewContent: JSONObject, modifier: Modifier = Modifier) {
 fun VideoView(viewContent: JSONObject, modifier: Modifier = Modifier) {
     val context = LocalContext.current
 
-    val videoUri = viewContent.getString(keyName = "source")
+    val sourceType = viewContent.optString(keyName = "sourceType", fallback = "remote")
+
+    var videoUri = viewContent.getString(keyName = "source")
+
+    if (sourceType == "local") {
+        videoUri = "asset:///$videoUri"
+    }
+
+    val scalingModeString = viewContent.optString(keyName = "scalingMode", fallback = "")
+
+    val scalingMode = when (scalingModeString)  {
+        "scaledToFill" -> C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING
+        "scaledToFit"-> C.VIDEO_SCALING_MODE_SCALE_TO_FIT
+        else -> C.VIDEO_SCALING_MODE_DEFAULT
+    }
+
+    val playerContentSizeMode = when (scalingModeString)  {
+        "scaledToFill" -> RESIZE_MODE_FILL
+        "scaledToFit"-> RESIZE_MODE_FIT
+        else -> RESIZE_MODE_FIT
+    }
+
+    val autoLoop = viewContent.optBoolean(keyName = "autoLoop", fallback = false)
 
     val exoPlayer = ExoPlayer.Builder(LocalContext.current)
         .build()
@@ -381,6 +405,8 @@ fun VideoView(viewContent: JSONObject, modifier: Modifier = Modifier) {
             exoPlayer.setMediaItem(mediaItem)
             exoPlayer.prepare()
             exoPlayer.playWhenReady = true
+            exoPlayer.videoScalingMode = scalingMode
+            exoPlayer.repeatMode = if (autoLoop) { Player.REPEAT_MODE_ONE } else { Player.REPEAT_MODE_OFF }
         }
 
     DisposableEffect(
@@ -388,6 +414,11 @@ fun VideoView(viewContent: JSONObject, modifier: Modifier = Modifier) {
             StyledPlayerView(context).apply {
                 useController = false
                 player = exoPlayer
+                layoutParams =
+                    FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                                            ViewGroup.LayoutParams.MATCH_PARENT)
+
+                resizeMode =  playerContentSizeMode
             }
         },
         modifier = modifier
@@ -777,23 +808,23 @@ fun NavigationApstentView(viewContent: JSONObject, modifier: Modifier = Modifier
 
     val views = viewContent.getJSONArray(keyName = "views")
     val navTitle = viewContent.optString(keyName = "navLinkDestination", "")
-
+    val navModifier = modifier.getModifier(viewContent)
     val navController = rememberNavController()
 
     if (navTitle.isNotEmpty()) {
 
         NavHost(
-            modifier = modifier,
+            modifier = navModifier,
             navController = navController,
             startDestination = navTitle
         ) {
 
             composable(navTitle) {
-                CurrentNavScreenContent(views, modifier, navController)
+                CurrentNavScreenContent(views, navModifier, navController)
             }
 
             //crawl through the view hierarchy to create composable for routes
-            navigationComposable(viewContent, modifier, this)
+            navigationComposable(viewContent, navModifier, this)
         }
     }
 }

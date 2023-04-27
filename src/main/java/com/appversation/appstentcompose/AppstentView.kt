@@ -394,6 +394,8 @@ fun VideoView(viewContent: JSONObject, modifier: Modifier = Modifier) {
         else -> RESIZE_MODE_FIT
     }
 
+    val showPlaybackControls = viewContent.optBoolean(keyName = "showPlaybackControls", fallback = false)
+
     val autoLoop = viewContent.optBoolean(keyName = "autoLoop", fallback = false)
 
     val exoPlayer = ExoPlayer.Builder(LocalContext.current)
@@ -412,7 +414,7 @@ fun VideoView(viewContent: JSONObject, modifier: Modifier = Modifier) {
     DisposableEffect(
         AndroidView(factory = {
             StyledPlayerView(context).apply {
-                useController = false
+                useController = showPlaybackControls
                 player = exoPlayer
                 layoutParams =
                     FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,

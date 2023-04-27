@@ -21,6 +21,7 @@ fun Modifier.getModifier(modifierContent: JSONObject) : Modifier {
         .getClipShapeModifier(modifierContent)
         .getCornerRadiusModifier(modifierContent)
         .getBackgroundModifier(modifierContent)
+        .getFillSizeModifier(modifierContent)
 }
 
 fun Modifier.getClipShapeModifier(modifierContent: JSONObject) : Modifier {
@@ -84,6 +85,40 @@ fun Modifier.getFrameSizeModifier(modifierContent: JSONObject) : Modifier {
             val height = modifierContent.getDouble(keyName = "height")
 
             modifier = modifier.requiredHeight(height.dp)
+        }
+
+        modifier
+    } catch (e: JSONException) {
+        this
+    }
+}
+
+fun Modifier.getFillSizeModifier(modifierContent: JSONObject) : Modifier {
+
+    var modifier: Modifier = this
+
+    return try {
+
+        modifier = if (modifierContent.has(keyName = "fillMaxWidth")) {
+
+            if (modifierContent.optBoolean(keyName = "fillMaxWidth", fallback = false)) {
+                modifier.fillMaxWidth()
+            } else {
+                modifier
+            }
+        } else {
+            modifier
+        }
+
+        modifier = if (modifierContent.has(keyName = "fillMaxHeight")) {
+
+            if (modifierContent.optBoolean(keyName = "fillMaxHeight", fallback = false)) {
+                modifier.fillMaxHeight()
+            } else {
+                modifier
+            }
+        } else {
+            modifier
         }
 
         modifier

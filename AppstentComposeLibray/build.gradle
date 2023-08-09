@@ -47,8 +47,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility "11"
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility "17"
+        targetCompatibility JavaVersion.VERSION_17
     }
     kotlinOptions {
         jvmTarget = '1.8'
@@ -74,7 +74,7 @@ afterEvaluate {
 
                 groupId = 'com.appversation.appstentcompose'
                 artifactId = 'appstentcompose'
-                version = '0.0.5'
+                version = '0.0.6'
 
                 from components.release
             }

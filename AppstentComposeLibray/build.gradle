@@ -14,7 +14,9 @@ plugins {
 
 android {
     compileSdk 33
-
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.1"
+    }
     defaultConfig {
         minSdk 26
         targetSdk 33

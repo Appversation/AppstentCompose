@@ -6,7 +6,9 @@ plugins {
 android {
     namespace 'com.appstentcompose.example'
     compileSdk 33
-
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.1"
+    }
     defaultConfig {
         applicationId "com.appstentcompose.example"
         minSdk 26

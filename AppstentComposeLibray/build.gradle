@@ -14,9 +14,6 @@ plugins {
 
 android {
     compileSdk 33
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.0"
-    }
     defaultConfig {
         minSdk 26
         targetSdk 33
@@ -60,7 +57,7 @@ android {
         compose true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion '1.4.4'
+        kotlinCompilerExtensionVersion '1.3.2'
     }
     packagingOptions {
         resources {
@@ -76,7 +73,7 @@ afterEvaluate {
 
                 groupId = 'com.appversation.appstentcompose'
                 artifactId = 'appstentcompose'
-                version = '0.0.8'
+                version = '0.0.9'
 
                 from components.release
             }

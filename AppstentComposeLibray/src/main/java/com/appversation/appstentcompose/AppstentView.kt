@@ -146,9 +146,9 @@ private fun isVisible(viewContent: JSONObject) : Boolean {
                         }
                     }.get(Calendar.HOUR_OF_DAY) to calendar.get(Calendar.MINUTE)
 
-                    val scheduledStartTimeInMinutes = (scheduledStartTimeComponents.first ?: 0) * 60 + (scheduledStartTimeComponents.second ?: 0)
-                    val currentTimeComponentsInMinutes = (currentTimeComponents.first ?: 0) * 60 + (currentTimeComponents.second ?: 0)
-                    val scheduledEndTimeInMinutes = (scheduledEndTimeComponents.first ?: 0) * 60 + (scheduledEndTimeComponents.second ?: 0)
+                    val scheduledStartTimeInMinutes = (scheduledStartTimeComponents.first) * 60 + (scheduledStartTimeComponents.second)
+                    val currentTimeComponentsInMinutes = (currentTimeComponents.first) * 60 + (currentTimeComponents.second)
+                    val scheduledEndTimeInMinutes = (scheduledEndTimeComponents.first) * 60 + (scheduledEndTimeComponents.second)
 
                     isVisible = currentTimeComponentsInMinutes in scheduledStartTimeInMinutes..scheduledEndTimeInMinutes
                 }

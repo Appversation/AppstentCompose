@@ -3,11 +3,11 @@ package com.appversation.appstentcompose
 import org.json.JSONArray
 import org.json.JSONObject
 
-fun JSONObject?.has(keyName: String) : Boolean {
+fun JSONObject.has(keyName: String) : Boolean {
     return this.has(keyName) || this.has("android:$keyName")
 }
 
-fun JSONObject?.getString(keyName: String): String {
+fun JSONObject.getString(keyName: String): String {
 
     return if (this.has("android:$keyName")) {
         getString("android:$keyName")
@@ -16,7 +16,7 @@ fun JSONObject?.getString(keyName: String): String {
     }
 }
 
-fun JSONObject?.optString(keyName: String, fallback: String): String {
+fun JSONObject.optString(keyName: String, fallback: String): String {
 
     val androidKeyValue = this?.optString("android:$keyName")
 
@@ -25,7 +25,7 @@ fun JSONObject?.optString(keyName: String, fallback: String): String {
     } ?: ""
 }
 
-fun JSONObject?.getDouble(keyName: String): Double {
+fun JSONObject.getDouble(keyName: String): Double {
 
     return if (this.has("android:$keyName")) {
         getDouble("android:$keyName")
@@ -34,7 +34,7 @@ fun JSONObject?.getDouble(keyName: String): Double {
     }
 }
 
-fun JSONObject?.optDouble(keyName: String, fallback: Double): Double {
+fun JSONObject.optDouble(keyName: String, fallback: Double): Double {
 
     return if (this.has("android:$keyName")) {
         optDouble("android:$keyName", fallback)
@@ -43,7 +43,7 @@ fun JSONObject?.optDouble(keyName: String, fallback: Double): Double {
     }
 }
 
-fun JSONObject?.getInt(keyName: String): Int {
+fun JSONObject.getInt(keyName: String): Int {
 
     return if (this.has("android:$keyName")) {
         getInt("android:$keyName")
@@ -52,7 +52,7 @@ fun JSONObject?.getInt(keyName: String): Int {
     }
 }
 
-fun JSONObject?.optInt(keyName: String, fallback: Int): Int {
+fun JSONObject.optInt(keyName: String, fallback: Int): Int {
 
     return if (this.has("android:$keyName")) {
         optInt("android:$keyName", fallback)
@@ -61,7 +61,7 @@ fun JSONObject?.optInt(keyName: String, fallback: Int): Int {
     }
 }
 
-fun JSONObject?.optBoolean(keyName: String, fallback: Boolean): Boolean {
+fun JSONObject.optBoolean(keyName: String, fallback: Boolean): Boolean {
 
     return if (this.has("android:$keyName")) {
         optBoolean("android:$keyName", false)
@@ -70,7 +70,7 @@ fun JSONObject?.optBoolean(keyName: String, fallback: Boolean): Boolean {
     }
 }
 
-fun JSONObject?.getJSONArray(keyName: String): JSONArray {
+fun JSONObject.getJSONArray(keyName: String): JSONArray {
 
     return if (this.has("android:$keyName")) {
         getJSONArray("android:$keyName")
@@ -82,7 +82,7 @@ fun JSONObject?.getJSONArray(keyName: String): JSONArray {
     }
 }
 
-fun JSONObject?.getJSONObject(keyName: String): JSONObject {
+fun JSONObject.getJSONObject(keyName: String): JSONObject {
 
     return if (this.has("android:$keyName")) {
         getJSONObject("android:$keyName")

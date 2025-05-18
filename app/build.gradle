@@ -3,6 +3,18 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+// Ensure the app can access GitHub Packages
+repositories {
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/Appversation/AppstentCompose")
+        credentials {
+            username = System.getenv("GITHUB_ACTOR")
+            password = System.getenv("GITHUB_TOKEN")
+        }
+    }
+}
+
 android {
     namespace 'com.appstentcompose.example'
     compileSdk 33

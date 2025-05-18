@@ -29,9 +29,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
+          
+      - name: Wait for package to be available
+        run: sleep 30
+        
+      - name: List published packages
+        run: |
+          echo "Checking for published package..."
+          curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+               -H "Accept: application/vnd.github.v3+json" \
+               https://api.github.com/orgs/Appversation/packages/maven/com.appversation.appstent-compose/versions
 
       - name: Build app
-        run: ./gradlew :app:build
+        run: ./gradlew :app:build --info
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}

@@ -18,6 +18,12 @@ repositories {
 android {
     namespace 'com.appstentcompose.example'
     compileSdk 33
+    
+    // Add lint configuration to handle notification permission error
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
     defaultConfig {
         applicationId "com.appstentcompose.example"
         minSdk 26

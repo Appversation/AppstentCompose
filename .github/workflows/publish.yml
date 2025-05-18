@@ -24,14 +24,14 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew build
+      - name: Publish library package
+        run: ./gradlew :AppstentComposeLibray:assembleRelease :AppstentComposeLibray:generatePomFileForReleasePublication :AppstentComposeLibray:publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
 
-      - name: Publish package
-        run: ./gradlew publish
+      - name: Build app
+        run: ./gradlew :app:build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}

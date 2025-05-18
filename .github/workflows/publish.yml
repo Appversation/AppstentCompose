@@ -11,6 +11,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      actions: read
+      checks: write
 
     steps:
       - uses: actions/checkout@v3
@@ -25,7 +27,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Publish library package
-        run: ./gradlew :AppstentComposeLibray:assembleRelease :AppstentComposeLibray:generatePomFileForReleasePublication :AppstentComposeLibray:publish
+        run: ./gradlew :AppstentComposeLibray:assembleRelease :AppstentComposeLibray:publish --stacktrace
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
@@ -39,7 +41,7 @@ jobs:
           curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                -H "Accept: application/vnd.github.v3+json" \
                https://api.github.com/orgs/Appversation/packages/maven/com.appversation.appstent-compose/versions
-          echo "\nVerifying if version 1.6.0 is available..."
+          echo "\nVerifying if version 1.6.1 is available..."
 
       - name: Build app
         run: ./gradlew :app:build --info

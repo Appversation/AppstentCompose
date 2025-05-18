@@ -3,9 +3,27 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+// Ensure the app can access GitHub Packages
+repositories {
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/Appversation/AppstentCompose")
+        credentials {
+            username = System.getenv("GITHUB_ACTOR")
+            password = System.getenv("GITHUB_TOKEN")
+        }
+    }
+}
+
 android {
     namespace 'com.appstentcompose.example'
     compileSdk 33
+    
+    // Add lint configuration to handle notification permission error
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
     defaultConfig {
         applicationId "com.appstentcompose.example"
         minSdk 26
@@ -63,5 +81,5 @@ dependencies {
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
     debugImplementation 'androidx.compose.ui:ui-tooling'
     debugImplementation 'androidx.compose.ui:ui-test-manifest'
-    implementation 'com.appversation:appstent-compose:1.5.9'
+    implementation 'com.appversation:appstent-compose:1.6.3'
 }

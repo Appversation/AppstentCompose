@@ -69,13 +69,29 @@ android {
 // Custom task to modify the generated POM file
 task modifyPom {
     doLast {
-        file("${buildDir}/publications/release/pom-default.xml").withWriter { w ->
-            def xml = new XmlParser().parse("${buildDir}/publications/release/pom-default.xml")
-            xml.groupId[0].value = 'com.appversation'
-            xml.artifactId[0].value = 'appstent-compose'
-            xml.version[0].value = '1.5.9'
-            
-            new XmlNodePrinter(new PrintWriter(w)).print(xml)
+        def pomFile = file("${buildDir}/publications/release/pom-default.xml")
+        if (pomFile.exists() && pomFile.length() > 0) {
+            try {
+                def xml = new XmlParser().parse(pomFile)
+                if (xml.groupId.size() > 0) {
+                    xml.groupId[0].value = 'com.appversation'
+                }
+                if (xml.artifactId.size() > 0) {
+                    xml.artifactId[0].value = 'appstent-compose'
+                }
+                if (xml.version.size() > 0) {
+                    xml.version[0].value = '1.6.3'
+                }
+                
+                pomFile.withWriter { w ->
+                    new XmlNodePrinter(new PrintWriter(w)).print(xml)
+                }
+                println "Successfully modified POM file with correct values"
+            } catch (Exception e) {
+                println "Error modifying POM file: ${e.message}"
+            }
+        } else {
+            println "POM file does not exist or is empty: ${pomFile.absolutePath}"
         }
     }
 }
@@ -92,13 +108,48 @@ tasks.whenTaskAdded { task ->
 
 afterEvaluate {
     publishing {
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/Appversation/AppstentCompose")
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR")
+                    password = System.getenv("GITHUB_TOKEN")
+                }
+            }
+        }
         publications {
             release(MavenPublication) {
-                group = 'com.appversation'
+                groupId = 'com.appversation'
                 artifactId = 'appstent-compose'
-                version = '1.5.9'
+                version = '1.6.3'
 
                 from components.release
+                
+                // Add POM metadata
+                pom {
+                    name = 'appstent-compose'
+                    description = 'Appstent Android Compose SDK'
+                    url = 'https://github.com/Appversation/AppstentCompose'
+                    licenses {
+                        license {
+                            name = 'Proprietary'
+                            url = 'https://github.com/Appversation/AppstentCompose/blob/main/LICENSE'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'appversation'
+                            name = 'Asad Ather'
+                            email = 'asad@appversation.com'
+                        }
+                    }
+                    scm {
+                        connection = 'scm:git:github.com/Appversation/AppstentCompose.git'
+                        developerConnection = 'scm:git:ssh://github.com/Appversation/AppstentCompose.git'
+                        url = 'https://github.com/Appversation/AppstentCompose'
+                    }
+                }
             }
         }
     }

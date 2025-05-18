@@ -73,7 +73,7 @@ task modifyPom {
             def xml = new XmlParser().parse("${buildDir}/publications/release/pom-default.xml")
             xml.groupId[0].value = 'com.appversation'
             xml.artifactId[0].value = 'appstent-compose'
-            xml.version[0].value = '1.5.9'
+            xml.version[0].value = '1.6.0'
             
             new XmlNodePrinter(new PrintWriter(w)).print(xml)
         }
@@ -94,9 +94,9 @@ afterEvaluate {
     publishing {
         publications {
             release(MavenPublication) {
-                group = 'com.appversation'
+                groupId = 'com.appversation'
                 artifactId = 'appstent-compose'
-                version = '1.5.9'
+                version = '1.6.0'
 
                 from components.release
             }

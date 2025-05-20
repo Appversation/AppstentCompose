@@ -1,7 +1,7 @@
 jdk:
   - openjdk17
 env:
-  - JITPACK=true
+  JITPACK: true
 install:
   - echo "Running JitPack build with project dependency"
   - ./gradlew :AppstentComposeLibray:clean :AppstentComposeLibray:publishToMavenLocal

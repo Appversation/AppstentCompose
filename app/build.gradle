@@ -88,6 +88,6 @@ dependencies {
     if (System.getenv("JITPACK") == "true") {
         implementation project(':AppstentComposeLibray')
     } else {
-        implementation 'com.appversation:appstent-compose:1.6.6'
+        implementation 'com.appversation:appstent-compose:1.6.7'
     }
 }

@@ -82,7 +82,7 @@ task modifyPom {
                     xml.artifactId[0].value = 'appstent-compose'
                 }
                 if (xml.version.size() > 0) {
-                    xml.version[0].value = '1.6.6'
+                    xml.version[0].value = '1.6.7'
                 }
                 
                 pomFile.withWriter { w ->
@@ -127,7 +127,7 @@ afterEvaluate {
             release(MavenPublication) {
                 groupId = 'com.appversation'
                 artifactId = 'appstent-compose'
-                version = '1.6.6'
+                version = '1.6.7'
 
                 from components.release
                 

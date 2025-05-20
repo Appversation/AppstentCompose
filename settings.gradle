@@ -40,5 +40,11 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "AppstentCompose"
-include ':app'
+
+// Only include the app module if not building with JitPack
+if (System.getenv("JITPACK") != "true") {
+    include ':app'
+}
+
+// Always include the library module
 include ':AppstentComposeLibray'

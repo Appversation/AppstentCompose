@@ -43,7 +43,7 @@ android {
         }
 
         release {
-            minifyEnabled true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -82,7 +82,7 @@ task modifyPom {
                     xml.artifactId[0].value = 'appstent-compose'
                 }
                 if (xml.version.size() > 0) {
-                    xml.version[0].value = '1.6.7'
+                    xml.version[0].value = '1.6.8'
                 }
                 
                 pomFile.withWriter { w ->
@@ -127,7 +127,7 @@ afterEvaluate {
             release(MavenPublication) {
                 groupId = 'com.appversation'
                 artifactId = 'appstent-compose'
-                version = '1.6.7'
+                version = '1.6.8'
 
                 from components.release
                 

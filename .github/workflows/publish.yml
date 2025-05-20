@@ -35,13 +35,20 @@ jobs:
       - name: Wait for package to be available
         run: sleep 30
         
+      - name: Get version from Gradle properties
+        id: get_version
+        run: |
+          VERSION=$(grep "VERSION_NAME" gradle.properties | head -n 1 | cut -d'=' -f2)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Using version: $VERSION"
+          
       - name: List published packages
         run: |
           echo "Checking for published package..."
           curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                -H "Accept: application/vnd.github.v3+json" \
                https://api.github.com/orgs/Appversation/packages/maven/com.appversation.appstent-compose/versions
-          echo "\nVerifying if version 1.6.7 is available..."
+          echo "\nVerifying if version ${{ steps.get_version.outputs.VERSION }} is available..."
 
       - name: Build app
         run: ./gradlew :app:build --info

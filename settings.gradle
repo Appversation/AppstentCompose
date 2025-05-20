@@ -1,13 +1,17 @@
 pluginManagement {
     repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/Appversation/AppstentCompose")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
+        // Only add GitHub Packages repository if not building through JitPack
+        if (System.getenv("JITPACK") != "true") {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/Appversation/AppstentCompose")
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR") ?: ""
+                    password = System.getenv("GITHUB_TOKEN") ?: ""
+                }
             }
         }
+        maven { url = uri("https://jitpack.io") }
         google()
         mavenCentral()
         gradlePluginPortal()
@@ -16,12 +20,15 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/Appversation/AppstentCompose")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
+        // Only add GitHub Packages repository if not building through JitPack
+        if (System.getenv("JITPACK") != "true") {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/Appversation/AppstentCompose")
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR") ?: ""
+                    password = System.getenv("GITHUB_TOKEN") ?: ""
+                }
             }
         }
         maven { 

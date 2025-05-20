@@ -5,12 +5,15 @@ plugins {
 
 // Ensure the app can access GitHub Packages
 repositories {
-    maven {
-        name = "GitHubPackages"
-        url = uri("https://maven.pkg.github.com/Appversation/AppstentCompose")
-        credentials {
-            username = System.getenv("GITHUB_ACTOR")
-            password = System.getenv("GITHUB_TOKEN")
+    // Only add GitHub Packages repository if not building through JitPack
+    if (System.getenv("JITPACK") != "true") {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/Appversation/AppstentCompose")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") ?: ""
+                password = System.getenv("GITHUB_TOKEN") ?: ""
+            }
         }
     }
 }
@@ -81,5 +84,5 @@ dependencies {
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
     debugImplementation 'androidx.compose.ui:ui-tooling'
     debugImplementation 'androidx.compose.ui:ui-test-manifest'
-    implementation 'com.appversation:appstent-compose:1.6.4'
+    implementation 'com.appversation:appstent-compose:1.6.5'
 }

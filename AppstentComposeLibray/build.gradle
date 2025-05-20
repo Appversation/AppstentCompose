@@ -82,7 +82,7 @@ task modifyPom {
                     xml.artifactId[0].value = 'appstent-compose'
                 }
                 if (xml.version.size() > 0) {
-                    xml.version[0].value = '1.6.4'
+                    xml.version[0].value = '1.6.5'
                 }
                 
                 pomFile.withWriter { w ->
@@ -111,12 +111,15 @@ tasks.whenTaskAdded { task ->
 afterEvaluate {
     publishing {
         repositories {
-            maven {
-                name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/Appversation/AppstentCompose")
-                credentials {
-                    username = System.getenv("GITHUB_ACTOR")
-                    password = System.getenv("GITHUB_TOKEN")
+            // Only add GitHub Packages repository if not building through JitPack
+            if (System.getenv("JITPACK") != "true") {
+                maven {
+                    name = "GitHubPackages"
+                    url = uri("https://maven.pkg.github.com/Appversation/AppstentCompose")
+                    credentials {
+                        username = System.getenv("GITHUB_ACTOR") ?: ""
+                        password = System.getenv("GITHUB_TOKEN") ?: ""
+                    }
                 }
             }
         }
@@ -124,7 +127,7 @@ afterEvaluate {
             release(MavenPublication) {
                 groupId = 'com.appversation'
                 artifactId = 'appstent-compose'
-                version = '1.6.4'
+                version = '1.6.5'
 
                 from components.release
                 

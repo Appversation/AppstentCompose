@@ -10,6 +10,8 @@ plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
     id 'maven-publish'
+    // The following line is not strictly necessary but helps with JitPack compatibility
+    id 'kotlin-android'
 }
 
 android {
@@ -80,7 +82,7 @@ task modifyPom {
                     xml.artifactId[0].value = 'appstent-compose'
                 }
                 if (xml.version.size() > 0) {
-                    xml.version[0].value = '1.6.3'
+                    xml.version[0].value = '1.6.4'
                 }
                 
                 pomFile.withWriter { w ->
@@ -122,7 +124,7 @@ afterEvaluate {
             release(MavenPublication) {
                 groupId = 'com.appversation'
                 artifactId = 'appstent-compose'
-                version = '1.6.3'
+                version = '1.6.4'
 
                 from components.release
                 

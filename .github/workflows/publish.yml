@@ -41,7 +41,7 @@ jobs:
           curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                -H "Accept: application/vnd.github.v3+json" \
                https://api.github.com/orgs/Appversation/packages/maven/com.appversation.appstent-compose/versions
-          echo "\nVerifying if version 1.6.3 is available..."
+          echo "\nVerifying if version 1.6.4 is available..."
 
       - name: Build app
         run: ./gradlew :app:build --info

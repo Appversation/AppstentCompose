@@ -33,7 +33,7 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
     }
     
     /**
-     * Get all documents, optionally under a specific path
+     * Get all documents recursively, optionally under a specific path
      */
     suspend fun getAllViewContents(subPath: String = ""): List<AppstentDoc> {
         return withContext(Dispatchers.IO) {
@@ -45,7 +45,27 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
             
             try {
                 val response = RequestHandler.requestGET(urlString = url)
-                parseDocumentsResponse(response)
+                val initialDocs = parseDocumentsResponse(response)
+                
+                // Recursively get children for each folder
+                val allDocs = mutableListOf<AppstentDoc>()
+                val folders = initialDocs.filter { it.isFolder }
+                
+                allDocs.addAll(initialDocs) // Add initial documents and folders
+                
+                // For each folder, get its children recursively
+                for (folder in folders) {
+                    val folderPath = folder.path.ifEmpty { folder.name }
+                    val children = getAllViewContents("$folderPath/")
+                    
+                    // Update the folder's children
+                    val folderIndex = allDocs.indexOf(folder)
+                    if (folderIndex != -1) {
+                        allDocs[folderIndex] = folder.copy(children = children)
+                    }
+                }
+                
+                allDocs
             } catch (e: Exception) {
                 e.printStackTrace()
                 emptyList()

@@ -15,10 +15,10 @@ plugins {
 }
 
 android {
-    compileSdk 33
+    compileSdk 35
     defaultConfig {
         minSdk 26
-        targetSdk 33
+        targetSdk 35
 
         aarMetadata {
             minCompileSdk = 31
@@ -127,7 +127,7 @@ afterEvaluate {
             release(MavenPublication) {
                 groupId = 'com.appversation'
                 artifactId = 'appstent-compose'
-                version = '1.7.0'
+                version = '1.7.1'
 
                 from components.release
                 

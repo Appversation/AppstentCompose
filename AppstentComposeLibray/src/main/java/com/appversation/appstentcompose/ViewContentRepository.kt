@@ -2,14 +2,17 @@ package com.appversation.appstentcompose
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Dispatchers.IO
+// import kotlinx.coroutines.Dispatchers.IO // Using Dispatchers.IO directly
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.runBlocking
+// import kotlinx.coroutines.runBlocking // Assuming not used elsewhere in this file
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 /**
  * Repository for fetching content from the Appstent backend
@@ -58,39 +61,92 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
     }
     
     /**
-     * Parse the JSON response into a list of AppstentDoc objects
+     * Parse the S3-like JSON response into a list of AppstentDoc objects.
+     * Paths in AppstentDoc will be relative to the basePrefix of the S3 listing.
+     * IDs in AppstentDoc will be the full S3 key/prefix.
      */
     private fun parseDocumentsResponse(response: JSONObject): List<AppstentDoc> {
         val documents = mutableListOf<AppstentDoc>()
-        
-        try {
-            if (response.has("documents")) {
-                val docsArray = response.getJSONArray("documents")
-                for (i in 0 until docsArray.length()) {
-                    val docObj = docsArray.getJSONObject(i)
-                    documents.add(parseDocObject(docObj))
+        val basePrefix = response.optString("Prefix", "") // e.g., "accountId/" or "accountId/subfolder/"
+
+        // Parse files from "Contents"
+        if (response.has("Contents")) {
+            val contentsArray = response.getJSONArray("Contents")
+            for (i in 0 until contentsArray.length()) {
+                val contentObj = contentsArray.getJSONObject(i)
+                val key = contentObj.optString("Key", "")
+                
+                // Skip if key is empty, is the basePrefix itself (representing the folder being listed), or ends with / (another way S3 lists folders)
+                if (key.isEmpty() || key == basePrefix || key.endsWith("/")) { 
+                    continue
+                }
+
+                val relativeKey = if (key.startsWith(basePrefix)) key.substring(basePrefix.length) else key
+                
+                val name = relativeKey.substringAfterLast('/')
+                val path = if (relativeKey.contains('/')) relativeKey.substringBeforeLast('/') else ""
+
+                documents.add(
+                    AppstentDoc(
+                        id = key, 
+                        name = name,
+                        path = path, 
+                        isFolder = false,
+                        content = null, 
+                        createdAt = parseS3DateString(contentObj.optString("LastModified")),
+                        updatedAt = parseS3DateString(contentObj.optString("LastModified")),
+                        accountId = "" // Will be filled by DocumentRepository
+                    )
+                )
+            }
+        }
+
+        // Parse folders from "CommonPrefixes"
+        if (response.has("CommonPrefixes")) {
+            val commonPrefixesArray = response.getJSONArray("CommonPrefixes")
+            for (i in 0 until commonPrefixesArray.length()) {
+                val prefixObj = commonPrefixesArray.getJSONObject(i)
+                val s3FolderPrefix = prefixObj.optString("Prefix", "") 
+                
+                if (s3FolderPrefix.isNotEmpty() && s3FolderPrefix.endsWith("/")) {
+                    val relativeFolderPrefix = if (s3FolderPrefix.startsWith(basePrefix)) s3FolderPrefix.substring(basePrefix.length) else s3FolderPrefix
+                    
+                    val fullRelativePath = relativeFolderPrefix.dropLast(1) 
+                    if (fullRelativePath.isEmpty()) continue
+
+                    val name = fullRelativePath.substringAfterLast('/')
+                    val path = if (fullRelativePath.contains('/')) fullRelativePath.substringBeforeLast('/') else ""
+                    
+                    documents.add(
+                        AppstentDoc(
+                            id = s3FolderPrefix.dropLast(1), 
+                            name = name,
+                            path = path, 
+                            isFolder = true,
+                            content = null,
+                            createdAt = Date(), 
+                            updatedAt = Date(),
+                            accountId = "" // Will be filled by DocumentRepository
+                        )
+                    )
                 }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
-        
         return documents
     }
-    
-    /**
-     * Parse a single JSON document object into an AppstentDoc
-     */
-    private fun parseDocObject(docObj: JSONObject): AppstentDoc {
-        return AppstentDoc(
-            id = docObj.optString("id", ""),
-            name = docObj.optString("name", ""),
-            path = docObj.optString("path", ""),
-            isFolder = docObj.optBoolean("isFolder", false),
-            content = if (docObj.has("content")) docObj.getString("content") else null,
-            createdAt = Date(docObj.optLong("createdAt", System.currentTimeMillis())),
-            updatedAt = Date(docObj.optLong("updatedAt", System.currentTimeMillis())),
-            accountId = docObj.optString("accountId", "")
-        )
+
+    private fun parseS3DateString(dateString: String?): Date {
+        if (dateString.isNullOrEmpty()) {
+            return Date() 
+        }
+        return try {
+            // S3 format: "2025-04-19T03:57:17.000Z"
+            val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+            sdf.timeZone = TimeZone.getTimeZone("UTC")
+            sdf.parse(dateString) ?: Date()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Date() 
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.appversation.appstentcompose
 
+import com.appversation.appstentcompose.RequestHandler.requestGET
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 // import kotlinx.coroutines.Dispatchers.IO // Using Dispatchers.IO directly
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -37,14 +39,17 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
      */
     suspend fun getAllViewContents(subPath: String = ""): List<AppstentDoc> {
         return withContext(Dispatchers.IO) {
-            val url = if (subPath.isEmpty()) {
-                contentURL
-            } else {
-                "$contentURL/$subPath"
-            }
             
             try {
-                val response = RequestHandler.requestGET(urlString = url)
+                val additionalHeaders = mapOf(
+                    "Accept" to "application/json",
+                    "Content-Type" to "application/json",
+                    "x-api-key" to ModuleConfigs.apiKey,
+                    "folder-prefix" to subPath)
+
+                val responseString = RequestHandler.requestGET(URL(contentURL), additionalHeaders)
+
+                val response = if (responseString.isNotEmpty()) JSONObject(responseString) else JSONObject()
                 val initialDocs = parseDocumentsResponse(response)
                 
                 // Recursively get children for each folder
@@ -56,7 +61,7 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
                 // For each folder, get its children recursively
                 for (folder in folders) {
                     val folderPath = folder.path.ifEmpty { folder.name }
-                    val children = getAllViewContents("$folderPath/")
+                    val children = getAllViewContents(folderPath)
                     
                     // Update the folder's children
                     val folderIndex = allDocs.indexOf(folder)

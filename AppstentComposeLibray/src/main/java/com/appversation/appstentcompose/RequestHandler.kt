@@ -70,7 +70,7 @@ object RequestHandler {
     }
 
     @Throws(IOException::class)
-    private fun requestGET(url: URL, additionalHeaders:Map<String, String> = HashMap()): String {
+    fun requestGET(url: URL, additionalHeaders:Map<String, String> = HashMap()): String {
         val con = (url.openConnection() as HttpURLConnection)
         additionalHeaders.forEach {
             con.setRequestProperty(it.key, it.value)

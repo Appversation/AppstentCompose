@@ -84,7 +84,7 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
     fun getAllViewContentsFlow(subPath: String = ""): Flow<List<AppstentDoc>> = flow {
         emit(getAllViewContents(subPath))
     }
-    
+
     /**
      * Parse the S3-like JSON response into a list of AppstentDoc objects.
      * Paths in AppstentDoc will be relative to the basePrefix of the S3 listing.
@@ -109,13 +109,12 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
                 val relativeKey = if (key.startsWith(basePrefix)) key.substring(basePrefix.length) else key
                 
                 val name = relativeKey.substringAfterLast('/')
-                val path = if (relativeKey.contains('/')) relativeKey.substringBeforeLast('/') else ""
 
                 documents.add(
                     AppstentDoc(
                         id = key, 
                         name = name,
-                        path = path, 
+                        path = relativeKey,
                         isFolder = false,
                         content = null, 
                         createdAt = parseS3DateString(contentObj.optString("LastModified")),
@@ -140,13 +139,12 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
                     if (fullRelativePath.isEmpty()) continue
 
                     val name = fullRelativePath.substringAfterLast('/')
-                    val path = if (fullRelativePath.contains('/')) fullRelativePath.substringBeforeLast('/') else ""
-                    
+
                     documents.add(
                         AppstentDoc(
                             id = s3FolderPrefix.dropLast(1), 
                             name = name,
-                            path = path, 
+                            path = fullRelativePath,
                             isFolder = true,
                             content = null,
                             createdAt = Date(), 

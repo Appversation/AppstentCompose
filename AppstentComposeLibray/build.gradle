@@ -82,7 +82,7 @@ task modifyPom {
                     xml.artifactId[0].value = 'appstent-compose'
                 }
                 if (xml.version.size() > 0) {
-                    xml.version[0].value = '1.7.3'
+                    xml.version[0].value = '1.7.4'
                 }
                 
                 pomFile.withWriter { w ->

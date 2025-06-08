@@ -93,6 +93,7 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
     private fun parseDocumentsResponse(response: JSONObject): List<AppstentDoc> {
         val documents = mutableListOf<AppstentDoc>()
         val basePrefix = response.optString("Prefix", "") // e.g., "accountId/" or "accountId/subfolder/"
+        val startAfter = response.optString("StartAfter", "")
 
         // Parse files from "Contents"
         if (response.has("Contents")) {
@@ -106,7 +107,7 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
                     continue
                 }
 
-                val relativeKey = if (key.startsWith(basePrefix)) key.substring(basePrefix.length) else key
+                val relativeKey = if (key.startsWith(startAfter)) key.substring(startAfter.length) else key
                 
                 val name = relativeKey.substringAfterLast('/')
 
@@ -128,12 +129,13 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
         // Parse folders from "CommonPrefixes"
         if (response.has("CommonPrefixes")) {
             val commonPrefixesArray = response.getJSONArray("CommonPrefixes")
+
             for (i in 0 until commonPrefixesArray.length()) {
                 val prefixObj = commonPrefixesArray.getJSONObject(i)
                 val s3FolderPrefix = prefixObj.optString("Prefix", "") 
                 
                 if (s3FolderPrefix.isNotEmpty() && s3FolderPrefix.endsWith("/")) {
-                    val relativeFolderPrefix = if (s3FolderPrefix.startsWith(basePrefix)) s3FolderPrefix.substring(basePrefix.length) else s3FolderPrefix
+                    val relativeFolderPrefix = if (s3FolderPrefix.startsWith(startAfter)) s3FolderPrefix.substring(startAfter.length) else s3FolderPrefix
                     
                     val fullRelativePath = relativeFolderPrefix.dropLast(1) 
                     if (fullRelativePath.isEmpty()) continue

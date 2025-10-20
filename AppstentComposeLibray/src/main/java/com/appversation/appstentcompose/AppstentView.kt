@@ -87,7 +87,7 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier, navCont
                 "hStack"    -> StackView(viewContent = viewContent, direction = Direction.x, modifier, navController)
                 "vStack"    -> StackView(viewContent = viewContent, direction = Direction.y, modifier, navController)
                 "zStack"    -> StackView(viewContent = viewContent, direction = Direction.z, modifier, navController)
-                "included"  -> IncludedView(viewContent.optString("source", ""), modifier, navController)
+                "included"  -> IncludedView(viewContent.optString(keyName = "source", ""), modifier, navController)
                 "grid"      -> GridView(viewContent = viewContent, modifier = modifier, navController)
                 "list"      -> ListView(viewContent = viewContent, modifier = modifier, navController)
                 "custom"    -> ModuleConfigs.customContentDataProvider?.CustomComposable(viewContent.getString(keyName = "customViewName"))

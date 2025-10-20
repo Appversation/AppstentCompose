@@ -30,8 +30,8 @@ fun getCustomFontStyle(viewContent: JSONObject) : TextStyle {
 
     // Font family
     var fontFamily: FontFamily? = null
-    if (viewContent.has("font")) {
-        val androidFontFamily = viewContent.getString("font")
+    if (viewContent.has(keyName = "font")) {
+        val androidFontFamily = viewContent.getString(keyName = "font")
         fontFamily = when (androidFontFamily) {
             "cursive"   -> FontFamily.Cursive
             "serif"     -> FontFamily.Serif
@@ -43,17 +43,17 @@ fun getCustomFontStyle(viewContent: JSONObject) : TextStyle {
 
     // Font Size
     var fontSize = TextUnit.Unspecified
-    if (viewContent.has("fontSize")) {
+    if (viewContent.has(keyName = "fontSize")) {
 
-        val fontSizeVal = viewContent.getDouble("fontSize")
+        val fontSizeVal = viewContent.getDouble(keyName = "fontSize")
         fontSize = TextUnit(fontSizeVal.toFloat(), TextUnitType.Sp)
     }
 
     // Font Weight
     var fontWeight: FontWeight? = null
-    if (viewContent.has("fontWeight")) {
+    if (viewContent.has(keyName = "fontWeight")) {
 
-        val fontWeightVal = viewContent.getString("fontWeight")
+        val fontWeightVal = viewContent.getString(keyName = "fontWeight")
         fontWeight = when(fontWeightVal) {
             "ultraLight"    -> FontWeight.ExtraLight
             "thin"          -> FontWeight.Thin
@@ -71,7 +71,7 @@ fun getCustomFontStyle(viewContent: JSONObject) : TextStyle {
     // Text Decoration/Emphasis
     var fontStyle: FontStyle? = null
     var textDecoration: TextDecoration? = null
-    if (viewContent.has("textEmphasis")) {
+    if (viewContent.has(keyName = "textEmphasis")) {
         val decorations = viewContent.getJSONArray("textEmphasis")
 
         (0 until decorations.length()).forEach {

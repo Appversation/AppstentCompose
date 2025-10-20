@@ -856,14 +856,25 @@ private fun navigationComposable(viewContent: JSONObject, modifier: Modifier = M
 
         val viewContentIt = views.getJSONObject(it)
 
-        if (viewContentIt.optString(keyName = "type", "") == "navigationLink" &&
-            viewContentIt.has(keyName = "route")) {
+        if (viewContentIt.optString(keyName = "type", "") == "navigationLink") {
 
-            val route = viewContentIt.getString(keyName = "route")
+            if (viewContentIt.optString(keyName = "routeType", "") == "custom" &&
+                viewContentIt.has(keyName = "customViewName")) {
 
-            navGraphBuilder.composable(route) {
-                IncludedView(fromSource = route, modifier)
+                val viewName = viewContentIt.getString(keyName = "customViewName")
+
+                navGraphBuilder.composable(viewName) {
+                    ModuleConfigs.customContentDataProvider?.CustomComposable(viewName)
+                }
             }
+            else if (viewContentIt.has(keyName = "route")) {
+                val route = viewContentIt.getString(keyName = "route")
+
+                navGraphBuilder.composable(route) {
+                    IncludedView(fromSource = route, modifier)
+                }
+            }
+
         } else if (viewContentIt.has(keyName = "views")) {
             navigationComposable(viewContentIt, modifier, navGraphBuilder)
         }

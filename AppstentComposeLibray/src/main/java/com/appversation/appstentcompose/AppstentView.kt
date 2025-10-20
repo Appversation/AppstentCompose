@@ -885,7 +885,15 @@ private fun navigationComposable(viewContent: JSONObject, modifier: Modifier = M
 fun NavigationApstentLink(viewContent: JSONObject, modifier: Modifier = Modifier, navController: NavHostController? = null) {
 
     val triggerView = viewContent.getJSONObject(keyName = "triggerView")
-    val route = viewContent.getString(keyName = "route")
+
+    var route: String = if (viewContent.optString(keyName = "routeType", "") == "custom" &&
+        viewContent.has(keyName = "customViewName")) {
+
+        viewContent.getString(keyName = "customViewName")
+    }
+    else {
+        viewContent.optString(keyName = "route", "")
+    }
 
     val navLinkModifier = modifier
         .clickable {

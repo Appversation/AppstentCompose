@@ -117,7 +117,7 @@ private fun isVisible(viewContent: JSONObject, customContentDataProvider: Custom
         val ruleName = visibilityRule.getString(keyName = "ruleName")
         val ruleValue = visibilityRule.optString(keyName = "ruleValue", "")
 
-        isVisible = isVisible && customContentDataProvider?.visibility(ruleName, ruleValue) ?: true
+        isVisible = isVisible && ModuleConfigs.customContentViewProvider?.visibility(ruleName, ruleValue) ?: true
 
         when (ruleName) {
             "daily" -> {
@@ -177,6 +177,12 @@ private fun isVisible(viewContent: JSONObject, customContentDataProvider: Custom
                 }
             }
         }
+    }
+
+    //Field level visibility overrides
+    val fieldName = viewContent.optString(keyName = "fieldVisibility", fallback = "")
+    if (fieldName.isNotEmpty()) {
+        isVisible = isVisible && customContentDataProvider?.getVisibility(fieldName) ?: true
     }
 
     return isVisible

@@ -15,13 +15,15 @@ object ModuleConfigs {
         fun CustomComposable(viewName: String)
 
         fun getFontFamilyFrom(name: String) : FontFamily
+
+        fun visibility(ruleName: String, ruleValue: String): Boolean
     }
 
     interface CustomContentDataProvider {
 
         fun getStringFor(fieldName: String): String
 
-        fun visibility(ruleName: String, ruleValue: String): Boolean
+        fun getVisibility(fieldName: String): Boolean
     }
 
     interface AppstentViewNavigationProvider {

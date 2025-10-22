@@ -7,14 +7,19 @@ object ModuleConfigs {
 
     var deploymentStage = "demo"
     var apiKey = ""
-    var customContentDataProvider: CustomContentDataProvider? = null
+    var customContentViewProvider: CustomContentViewProvider? = null
 
-    interface CustomContentDataProvider {
-        fun getFontFamilyFrom(name: String) : FontFamily
-        fun getStringFor(fieldName: String): String
+    interface CustomContentViewProvider {
 
         @Composable
         fun CustomComposable(viewName: String)
+
+        fun getFontFamilyFrom(name: String) : FontFamily
+    }
+
+    interface CustomContentDataProvider {
+
+        fun getStringFor(fieldName: String): String
 
         fun visibility(ruleName: String, ruleValue: String): Boolean
     }

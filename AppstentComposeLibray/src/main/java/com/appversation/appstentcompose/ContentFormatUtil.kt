@@ -37,7 +37,7 @@ fun getCustomFontStyle(viewContent: JSONObject) : TextStyle {
             "serif"     -> FontFamily.Serif
             "sansSerif" -> FontFamily.SansSerif
             "monospace" -> FontFamily.Monospace
-            else        -> ModuleConfigs.customContentDataProvider?.getFontFamilyFrom(androidFontFamily)
+            else        -> ModuleConfigs.customContentViewProvider?.getFontFamilyFrom(androidFontFamily)
         }
     }
 

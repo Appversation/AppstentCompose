@@ -82,7 +82,7 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier, navCont
                     if (tabStyle == "pageStyle") {
                         PagerView(viewContent, modifier, navController, customContentDataProvider)
                     } else {
-                        BottomBar(viewContent, modifier)
+                        BottomBar(viewContent, modifier, customContentDataProvider = customContentDataProvider)
                     }
                 }
                 "hStack"    -> StackView(viewContent = viewContent, direction = Direction.x, modifier, navController, customContentDataProvider)
@@ -93,7 +93,7 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier, navCont
                 "list"      -> ListView(viewContent = viewContent, modifier = modifier, navController, customContentDataProvider)
                 "custom"    -> ModuleConfigs.customContentViewProvider?.CustomComposable(viewContent.getString(keyName = "customViewName"))
                 "navigationView" -> NavigationApstentView(viewContent = viewContent, modifier, customContentDataProvider)
-                "navigationLink" -> NavigationApstentLink(viewContent = viewContent, modifier, navController)
+                "navigationLink" -> NavigationApstentLink(viewContent = viewContent, modifier, navController, customContentDataProvider)
 
                 else -> { }
             }
@@ -921,7 +921,7 @@ fun NavigationApstentLink(viewContent: JSONObject, modifier: Modifier = Modifier
 
     val triggerView = viewContent.getJSONObject(keyName = "triggerView")
 
-    var route: String = if (viewContent.optString(keyName = "routeType", "") == "custom" &&
+    val route: String = if (viewContent.optString(keyName = "routeType", "") == "custom" &&
         viewContent.has(keyName = "customViewName")) {
 
         viewContent.getString(keyName = "customViewName")

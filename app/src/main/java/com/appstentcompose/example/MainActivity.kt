@@ -69,5 +69,5 @@ fun MainContent(viewModel: AppstentViewModel = viewModel(
 )) {
     val viewContent by viewModel.viewContent.collectAsStateWithLifecycle(initialValue = JSONObject())
 
-    AppstentView(viewContent = viewContent)
+    AppstentView(viewContent = viewContent, customContentDataProvider = TestDataProvider())
 }

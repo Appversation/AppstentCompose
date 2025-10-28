@@ -109,6 +109,12 @@ private fun isVisible(viewContent: JSONObject, customContentDataProvider: Custom
 
     var isVisible = true
 
+    //Field level visibility overrides
+    val fieldName = viewContent.optString(keyName = "fieldVisibility", fallback = "")
+    if (fieldName.isNotEmpty()) {
+        isVisible = isVisible && customContentDataProvider?.getVisibility(fieldName) ?: true
+    }
+
     if (!viewContent.has(keyName = "visibility")) {
         return isVisible
     }
@@ -183,11 +189,7 @@ private fun isVisible(viewContent: JSONObject, customContentDataProvider: Custom
         }
     }
 
-    //Field level visibility overrides
-    val fieldName = viewContent.optString(keyName = "fieldVisibility", fallback = "")
-    if (fieldName.isNotEmpty()) {
-        isVisible = isVisible && customContentDataProvider?.getVisibility(fieldName) ?: true
-    }
+
 
     return isVisible
 }

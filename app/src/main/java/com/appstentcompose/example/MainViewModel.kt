@@ -38,6 +38,7 @@ class MainViewModel(
     @Composable
     override fun CustomComposable(viewName: String) {
         when (viewName) {
+            "lab_results_widget" -> TestWidget()
             else -> Text(text = "This is a default custom view")
         }
     }

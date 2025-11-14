@@ -867,7 +867,7 @@ fun NavigationApstentView(viewContent: JSONObject, modifier: Modifier = Modifier
             }
 
             //crawl through the view hierarchy to create composable for routes
-            navigationComposable(viewContent, navModifier, this)
+            navigationComposable(viewContent, navModifier, this, customContentDataProvider)
         }
     }
 }
@@ -880,7 +880,9 @@ private fun CurrentNavScreenContent(views: JSONArray, modifier: Modifier = Modif
 
         val viewContentIt = views.getJSONObject(it)
 
-        AppstentView(viewContent = viewContentIt, modifier, navController, customContentDataProvider)
+        val mod = modifier.getModifier(viewContentIt)
+
+        AppstentView(viewContent = viewContentIt, mod, navController, customContentDataProvider)
     }
 }
 
@@ -917,7 +919,8 @@ private fun navigationComposable(viewContent: JSONObject, modifier: Modifier = M
             }
 
         } else if (viewContentIt.has(keyName = "views")) {
-            navigationComposable(viewContentIt, modifier, navGraphBuilder, customContentDataProvider)
+            val containerModifier = modifier.getModifier(viewContentIt)
+            navigationComposable(viewContentIt, containerModifier, navGraphBuilder, customContentDataProvider)
         }
     }
 }

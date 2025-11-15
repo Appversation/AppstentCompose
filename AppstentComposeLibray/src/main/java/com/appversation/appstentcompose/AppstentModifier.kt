@@ -22,11 +22,11 @@ fun Modifier.getModifier(modifierContent: JSONObject) : Modifier {
         .getPaddingModifier(modifierContent)
         .getFrameSizeModifier(modifierContent)
         .getOffsetModifier(modifierContent)
+        .getShadowModifier(modifierContent)
         .getClipShapeModifier(modifierContent)
         .getCornerRadiusModifier(modifierContent)
         .getBackgroundModifier(modifierContent)
         .getFillSizeModifier(modifierContent)
-        .getShadowModifier(modifierContent)
 }
 
 fun Modifier.getClipShapeModifier(modifierContent: JSONObject) : Modifier {
@@ -153,18 +153,21 @@ fun Modifier.getShadowModifier(modifierContent: JSONObject) : Modifier {
     return try {
         modifier = if (modifierContent.has(keyName = "shadow")) {
 
-            val shadowObject = modifierContent.getJSONObject("shadow")
+            val shadowObject = modifierContent.getJSONObject(keyName = "shadow")
             val colorString = shadowObject.optString("color", fallback = "#000000")
             val color = Color(android.graphics.Color.parseColor(colorString))
 
-            if (shadowObject.has("radius")) {
+            if (shadowObject.has(keyName = "radius") && shadowObject.has(keyName = "spread")) {
 
-                val radius = shadowObject.getDouble("radius")
+                val radius = shadowObject.getDouble(keyName = "radius")
+                val spread = shadowObject.getDouble(keyName ="spread")
+
                 modifier.dropShadow(
                     shape = RoundedCornerShape(radius.dp),
                     shadow = Shadow(
                         radius = radius.dp,
                         color = color,
+                        spread = spread.dp
                     )
                 )
             } else {

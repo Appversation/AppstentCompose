@@ -7,7 +7,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import org.json.JSONException
 import org.json.JSONObject
@@ -22,6 +26,7 @@ fun Modifier.getModifier(modifierContent: JSONObject) : Modifier {
         .getCornerRadiusModifier(modifierContent)
         .getBackgroundModifier(modifierContent)
         .getFillSizeModifier(modifierContent)
+        .getShadowModifier(modifierContent)
 }
 
 fun Modifier.getClipShapeModifier(modifierContent: JSONObject) : Modifier {
@@ -136,6 +141,40 @@ fun Modifier.getOffsetModifier(modifierContent: JSONObject) : Modifier {
 
         return this.offset(x = offsetX.dp, y= offsetY.dp)
 
+    } catch (e: JSONException) {
+        this
+    }
+}
+
+fun Modifier.getShadowModifier(modifierContent: JSONObject) : Modifier {
+
+    var modifier: Modifier = this
+
+    return try {
+        modifier = if (modifierContent.has(keyName = "shadow")) {
+
+            val shadowObject = modifierContent.getJSONObject("shadow")
+            val colorString = shadowObject.optString("color", fallback = "#000000")
+            val color = Color(android.graphics.Color.parseColor(colorString))
+
+            if (shadowObject.has("radius")) {
+
+                val radius = shadowObject.getDouble("radius")
+                modifier.dropShadow(
+                    shape = RoundedCornerShape(radius.dp),
+                    shadow = Shadow(
+                        radius = radius.dp,
+                        color = color,
+                    )
+                )
+            } else {
+                modifier
+            }
+        } else {
+            modifier
+        }
+
+        modifier
     } catch (e: JSONException) {
         this
     }

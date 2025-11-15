@@ -3,7 +3,7 @@ import com.appversation.appstentcompose.ModuleConfigs
 
 class TestDataProvider: ModuleConfigs.CustomContentDataProvider {
     override fun getStringFor(fieldName: String): String {
-        return "some value"
+        return "some value that is very very very long and should test the line limit"
     }
 
     override fun getVisibility(fieldName: String): Boolean {

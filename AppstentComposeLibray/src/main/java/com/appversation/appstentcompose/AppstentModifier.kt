@@ -2,6 +2,7 @@ package com.appversation.appstentcompose
 
 import android.support.v4.os.IResultReceiver._Parcel
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +12,7 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import org.json.JSONException
@@ -26,6 +28,7 @@ fun Modifier.getModifier(modifierContent: JSONObject) : Modifier {
         .getClipShapeModifier(modifierContent)
         .getCornerRadiusModifier(modifierContent)
         .getBackgroundModifier(modifierContent)
+        .getBorderModifier(modifierContent)
         .getFillSizeModifier(modifierContent)
 }
 
@@ -61,6 +64,35 @@ fun Modifier.getBackgroundModifier(modifierContent: JSONObject) : Modifier {
     }
 }
 
+fun Modifier.getBorderModifier(modifierContent: JSONObject) : Modifier {
+
+    return try {
+        val borderColorString = modifierContent.optString(keyName = "borderColor", fallback = "")
+
+        if (borderColorString.isEmpty()) {
+            this
+        } else {
+            val borderWidth = modifierContent.optDouble(keyName = "borderWidth", fallback = 1.0)
+            val color = Color(android.graphics.Color.parseColor(borderColorString))
+
+            val borderShape = when {
+                modifierContent.optString(keyName = "clipShape", fallback = "") == "circle" -> CircleShape
+                modifierContent.has(keyName = "cornerRadius") -> {
+                    val cornerRadius = modifierContent.getInt(keyName = "cornerRadius")
+                    RoundedCornerShape(cornerRadius.dp)
+                }
+                else -> RoundedCornerShape(0.dp)
+            }
+
+            this.border(width = borderWidth.dp, color = color, shape = borderShape)
+        }
+    } catch (e: JSONException) {
+        this
+    } catch (e: IllegalArgumentException) {
+        this
+    }
+}
+
 fun Modifier.getPaddingModifier(modifierContent: JSONObject) : Modifier {
 
     return try {
@@ -91,6 +123,32 @@ fun Modifier.getFrameSizeModifier(modifierContent: JSONObject) : Modifier {
 
             modifier = modifier.requiredHeight(height.dp)
         }
+
+        val minWidth = if (modifierContent.has(keyName = "minWidth")) {
+            modifierContent.getDouble(keyName = "minWidth").dp
+        } else {
+            Dp.Unspecified
+        }
+
+        val minHeight = if (modifierContent.has(keyName = "minHeight")) {
+            modifierContent.getDouble(keyName = "minHeight").dp
+        } else {
+            Dp.Unspecified
+        }
+
+        val maxWidth = if (modifierContent.has(keyName = "maxWidth")) {
+            modifierContent.getDouble(keyName = "maxWidth").dp
+        } else {
+            Dp.Unspecified
+        }
+
+        val maxHeight = if (modifierContent.has(keyName = "maxHeight")) {
+            modifierContent.getDouble(keyName = "maxHeight").dp
+        } else {
+            Dp.Unspecified
+        }
+
+        modifier = modifier.sizeIn(minWidth = minWidth, minHeight = minHeight, maxWidth = maxWidth, maxHeight = maxHeight)
 
         modifier
     } catch (e: JSONException) {

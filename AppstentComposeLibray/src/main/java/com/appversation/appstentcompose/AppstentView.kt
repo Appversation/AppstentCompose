@@ -37,6 +37,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -293,10 +294,26 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customConte
         }
     }
 
+    val lineLimit = if (viewContent.has(keyName = "lineLimit")) {
+        val limit = viewContent.optInt(keyName = "lineLimit", Int.MAX_VALUE)
+        if (limit > 0) limit else Int.MAX_VALUE
+    } else {
+        Int.MAX_VALUE
+    }
+
+    val textOverflow = if (lineLimit == Int.MAX_VALUE) {
+        TextOverflow.Clip
+    } else {
+        TextOverflow.Ellipsis
+    }
+
     Text(textString,
         color = color,
         style = textStyle,
-        modifier = modifier.getModifier(viewContent))
+        modifier = modifier.getModifier(viewContent),
+        maxLines = lineLimit,
+        overflow = textOverflow
+    )
 }
 
 @Composable

@@ -19,6 +19,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.*
 
@@ -125,5 +126,15 @@ fun getHorizontalAlignment(alignmentString: String) : Alignment.Horizontal {
         "center"        -> CenterHorizontally
         "trailing"      -> End
         else -> CenterHorizontally
+    }
+}
+
+fun getTextAlignment(alignmentString: String) : TextAlign {
+
+    return when (alignmentString) {
+        "leading"       -> TextAlign.Start
+        "center"        -> TextAlign.Center
+        "trailing"      -> TextAlign.End
+        else -> TextAlign.Center
     }
 }

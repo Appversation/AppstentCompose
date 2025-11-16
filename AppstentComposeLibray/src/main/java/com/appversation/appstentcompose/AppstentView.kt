@@ -43,6 +43,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
@@ -317,6 +318,14 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customConte
         }
     }
 
+    //Text alignment
+    val textAlignment = if (viewContent.has(keyName = "alignment")) {
+        getTextAlignment(viewContent.optString(keyName = "alignment", "center"))
+    } else {
+        TextAlign.Start
+    }
+
+
     val lineLimit = if (viewContent.has(keyName = "lineLimit")) {
         val limit = viewContent.optInt(keyName = "lineLimit", Int.MAX_VALUE)
         if (limit > 0) limit else Int.MAX_VALUE
@@ -346,7 +355,8 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customConte
             style = textStyle,
             modifier = modifier.getModifier(viewContent),
             maxLines = lineLimit,
-            overflow = textOverflow
+            overflow = textOverflow,
+            textAlign = textAlignment
         )
     } else {
 
@@ -355,7 +365,8 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customConte
             style = textStyle,
             modifier = modifier.getModifier(viewContent),
             maxLines = lineLimit,
-            overflow = textOverflow
+            overflow = textOverflow,
+            textAlign = textAlignment
         )
     }
 }

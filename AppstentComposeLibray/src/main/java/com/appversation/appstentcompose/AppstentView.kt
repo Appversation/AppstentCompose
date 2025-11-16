@@ -22,6 +22,7 @@ import androidx.compose.material3.Icon // Your default Icon will be from M3
 
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
@@ -33,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -291,7 +293,7 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customConte
     }
 
     //foreground color
-    var color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Black
+    var color: Color = Color.Black
     if (viewContent.has(keyName = "foregroundColor")) {
         val fgColor = viewContent.getString(keyName = "foregroundColor")
         color = Color(android.graphics.Color.parseColor(fgColor))
@@ -301,16 +303,16 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customConte
     if (viewContent.has(keyName = "font")) {
         val fontString = viewContent.getString(keyName = "font")
         textStyle = when (fontString) {
-            "largeTitle" -> androidx.compose.material.MaterialTheme.typography.h3
-            "title" -> androidx.compose.material.MaterialTheme.typography.h4
-            "title2" -> androidx.compose.material.MaterialTheme.typography.h5
-            "title3" -> androidx.compose.material.MaterialTheme.typography.h6
-            "headline" -> androidx.compose.material.MaterialTheme.typography.subtitle1
-            "subheadline" -> androidx.compose.material.MaterialTheme.typography.subtitle2
-            "body" -> androidx.compose.material.MaterialTheme.typography.body1
-            "callout" -> androidx.compose.material.MaterialTheme.typography.body2
-            "footnote" -> androidx.compose.material.MaterialTheme.typography.overline
-            "caption" -> androidx.compose.material.MaterialTheme.typography.caption
+            "largeTitle" -> MaterialTheme.typography.h3
+            "title" -> MaterialTheme.typography.h4
+            "title2" -> MaterialTheme.typography.h5
+            "title3" -> MaterialTheme.typography.h6
+            "headline" -> MaterialTheme.typography.subtitle1
+            "subheadline" -> MaterialTheme.typography.subtitle2
+            "body" -> MaterialTheme.typography.body1
+            "callout" -> MaterialTheme.typography.body2
+            "footnote" -> MaterialTheme.typography.overline
+            "caption" -> MaterialTheme.typography.caption
             else -> {
 
                 getCustomFontStyle(viewContent)
@@ -550,58 +552,46 @@ fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier, customCont
 @Composable
 fun Icon(name: String, viewContent: JSONObject, modifier: Modifier = Modifier) {
 
-    val icon = when(name) {
-        "house"     -> Icons.Outlined.Home
-        "plus"      -> Icons.Outlined.Add
-        "exclamationmark.triangle"     -> Icons.Outlined.Warning
-        "mail"      -> Icons.Outlined.MailOutline
-        "phone"     -> Icons.Outlined.Call
-        "person.crop.square"      -> Icons.Outlined.AccountBox
-        "person.circle"     -> Icons.Outlined.AccountCircle
-        "plus.circle"      -> Icons.Outlined.AddCircle
-        "arrow.backward"     -> Icons.Outlined.ArrowBack
-        "arrow.forward"      -> Icons.Outlined.ArrowForward
-        "arrow.down"     -> Icons.Outlined.ArrowDropDown
-        "checkmark"      -> Icons.Outlined.Check
-        "checkmark.circle"     -> Icons.Outlined.CheckCircle
-        "clear"      -> Icons.Outlined.Clear
-        "xmark"     -> Icons.Outlined.Close
-        "calendar"      -> Icons.Outlined.DateRange
-        "delete.left"     -> Icons.Outlined.Delete
-        "pencil"      -> Icons.Outlined.Edit
-        "face.smiling"     -> Icons.Outlined.Face
-        "heart"      -> Icons.Outlined.Favorite
-        "heart.square"     -> Icons.Outlined.FavoriteBorder
-        "info"      -> Icons.Outlined.Info
-        "keyboard.chevron.compact.down"      -> Icons.Outlined.KeyboardArrowDown
-        "keyboard.chevron.compact.left"      -> Icons.Outlined.KeyboardArrowLeft
-        "keyboard.chevron.compact.right"     -> Icons.Outlined.KeyboardArrowRight
-        "list.bullet"     -> Icons.Outlined.List
-        "location"        -> Icons.Outlined.LocationOn
-        "lock"            -> Icons.Outlined.Lock
-        "play"            -> Icons.Outlined.PlayArrow
-        "place"           -> Icons.Outlined.Place
-        "arrow.clockwise" -> Icons.Outlined.Refresh
-        "magnifyingglass" -> Icons.Outlined.Search
-        "gear"            -> Icons.Outlined.Settings
-        "square.and.arrow.up" -> Icons.Outlined.Share
-        "cart"            -> Icons.Outlined.ShoppingCart
-        "star"            -> Icons.Outlined.Star
-        "hand.thumbsup"   -> Icons.Outlined.ThumbUp
-        else        ->  Icons.Outlined.Warning
-    }
+    val icon = remember(name) { iconFromOutlinedPack(name) } ?: Icons.Outlined.Warning
 
     //foreground color
-    var color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Black
+    var color: Color = Color.Black
     if (viewContent.has(keyName = "foregroundColor")) {
         val fgColor = viewContent.getString(keyName = "foregroundColor")
         color = Color(android.graphics.Color.parseColor(fgColor))
     }
 
-    return Icon(imageVector = icon, "",
+    Icon(imageVector = icon, "",
         modifier = modifier
             .getModifier(viewContent),
-        tint = color)
+        tint = color
+    )
+}
+
+private fun iconFromOutlinedPack(rawName: String): ImageVector? {
+    val normalizedName = rawName
+        .split('.', '_', '-')
+        .filter { it.isNotBlank() }
+        .joinToString("") { part ->
+            part.replaceFirstChar { char ->
+                if (char.isLowerCase()) {
+                    char.titlecase(Locale.getDefault())
+                } else {
+                    char.toString()
+                }
+            }
+        }
+
+    val className = "androidx.compose.material.icons.outlined.${normalizedName}Kt"
+    val getterName = "get$normalizedName"
+
+    return runCatching {
+        val method = Class.forName(className)
+            .methods
+            .firstOrNull { it.name == getterName && it.parameterTypes.size == 1 }
+
+        method?.invoke(null, Icons.Outlined) as? ImageVector
+    }.getOrNull()
 }
 
 @Composable

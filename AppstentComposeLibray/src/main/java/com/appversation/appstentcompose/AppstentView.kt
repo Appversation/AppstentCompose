@@ -36,8 +36,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -65,6 +73,21 @@ import com.google.android.exoplayer2.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
 import com.google.android.exoplayer2.ui.StyledPlayerView
 import org.json.JSONArray
 import org.json.JSONObject
+import org.commonmark.node.BulletList
+import org.commonmark.node.Code
+import org.commonmark.node.Document
+import org.commonmark.node.Emphasis
+import org.commonmark.node.HardLineBreak
+import org.commonmark.node.Heading
+import org.commonmark.node.Link
+import org.commonmark.node.ListItem
+import org.commonmark.node.Node
+import org.commonmark.node.OrderedList
+import org.commonmark.node.Paragraph
+import org.commonmark.node.SoftLineBreak
+import org.commonmark.node.StrongEmphasis
+import org.commonmark.node.Text as MarkdownTextNode
+import org.commonmark.parser.Parser
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -307,13 +330,160 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customConte
         TextOverflow.Ellipsis
     }
 
-    Text(textString,
-        color = color,
-        style = textStyle,
-        modifier = modifier.getModifier(viewContent),
-        maxLines = lineLimit,
-        overflow = textOverflow
-    )
+    val isMarkdown = viewContent.optBoolean(keyName = "isMarkdown", fallback = false)
+
+    if (isMarkdown) {
+
+        val markdownText = rememberMarkdownText(
+            markdown = textString,
+            textStyle = textStyle,
+            color = color
+        )
+
+        Text(
+            text = markdownText,
+            color = color,
+            style = textStyle,
+            modifier = modifier.getModifier(viewContent),
+            maxLines = lineLimit,
+            overflow = textOverflow
+        )
+    } else {
+
+        Text(textString,
+            color = color,
+            style = textStyle,
+            modifier = modifier.getModifier(viewContent),
+            maxLines = lineLimit,
+            overflow = textOverflow
+        )
+    }
+}
+
+@Composable
+private fun rememberMarkdownText(
+    markdown: String,
+    textStyle: TextStyle,
+    color: Color
+): AnnotatedString {
+
+    val parser = remember { Parser.builder().build() }
+    val baseSpanStyle = remember(textStyle, color) {
+        // Mirror the incoming TextStyle into a SpanStyle so inline markdown spans inherit it.
+        SpanStyle(
+            color = if (textStyle.color != Color.Unspecified) textStyle.color else color,
+            fontWeight = textStyle.fontWeight,
+            fontStyle = textStyle.fontStyle,
+            fontFamily = textStyle.fontFamily,
+            fontSize = textStyle.fontSize,
+            letterSpacing = textStyle.letterSpacing,
+            textDecoration = textStyle.textDecoration,
+            background = textStyle.background,
+            fontSynthesis = textStyle.fontSynthesis
+        )
+    }
+
+    return remember(markdown, baseSpanStyle, parser) {
+        val document = parser.parse(markdown)
+        buildAnnotatedString {
+            appendMarkdownNode(document, baseSpanStyle)
+        }
+    }
+}
+
+private fun AnnotatedString.Builder.appendMarkdownNode(
+    node: Node?,
+    baseSpanStyle: SpanStyle
+) {
+
+    var current = node
+
+    while (current != null) {
+        when (current) {
+            is Document -> {
+                appendMarkdownNode(current.firstChild, baseSpanStyle)
+            }
+            is Paragraph -> {
+                appendMarkdownNode(current.firstChild, baseSpanStyle)
+                if (current.next != null) {
+                    append("\n\n")
+                }
+            }
+            is MarkdownTextNode -> append(current.literal)
+            is SoftLineBreak, is HardLineBreak -> append("\n")
+            is Emphasis -> {
+                val italicStyle = baseSpanStyle.merge(SpanStyle(fontStyle = FontStyle.Italic))
+                withStyle(italicStyle) {
+                    appendMarkdownNode(current.firstChild, italicStyle)
+                }
+            }
+            is StrongEmphasis -> {
+                val boldStyle = baseSpanStyle.merge(SpanStyle(fontWeight = FontWeight.Bold))
+                withStyle(boldStyle) {
+                    appendMarkdownNode(current.firstChild, boldStyle)
+                }
+            }
+            is Code -> {
+                val codeStyle = baseSpanStyle.merge(SpanStyle(fontFamily = FontFamily.Monospace))
+                withStyle(codeStyle) {
+                    append(current.literal)
+                }
+            }
+            is Link -> {
+                val start = length
+                appendMarkdownNode(current.firstChild, baseSpanStyle)
+                val end = length
+
+                current.destination?.let { destination ->
+                    addStringAnnotation("URL", destination, start, end)
+                }
+                addStyle(
+                    style = baseSpanStyle.merge(SpanStyle(textDecoration = TextDecoration.Underline)),
+                    start = start,
+                    end = end
+                )
+            }
+            is Heading -> {
+                appendMarkdownNode(current.firstChild, baseSpanStyle)
+                if (current.next != null) {
+                    append("\n\n")
+                }
+            }
+            is BulletList -> {
+                var item = current.firstChild as? ListItem
+                while (item != null) {
+                    append("• ")
+                    appendMarkdownNode(item.firstChild, baseSpanStyle)
+                    item = item.next as? ListItem
+                    if (item != null) {
+                        append("\n")
+                    }
+                }
+                if (current.next != null) {
+                    append("\n\n")
+                }
+            }
+            is OrderedList -> {
+                var item = current.firstChild as? ListItem
+                var index = current.startNumber
+                while (item != null) {
+                    append("${index}. ")
+                    appendMarkdownNode(item.firstChild, baseSpanStyle)
+                    item = item.next as? ListItem
+                    index += 1
+                    if (item != null) {
+                        append("\n")
+                    }
+                }
+                if (current.next != null) {
+                    append("\n\n")
+                }
+            }
+            is ListItem -> appendMarkdownNode(current.firstChild, baseSpanStyle)
+            else -> appendMarkdownNode(current.firstChild, baseSpanStyle)
+        }
+        current = current.next
+    }
 }
 
 @Composable

@@ -318,6 +318,9 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customConte
                 getCustomFontStyle(viewContent)
             }
         }
+    } else {
+        //apply text styles for cases when font field is not specified
+        textStyle = getCustomFontStyle(viewContent)
     }
 
     //Text alignment

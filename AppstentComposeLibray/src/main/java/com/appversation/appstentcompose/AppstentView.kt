@@ -1149,10 +1149,20 @@ fun BottomBar(viewContent: JSONObject, modifier: Modifier = Modifier, customCont
 
     val firstTabTitle = tabs.getJSONObject(0).getString(keyName = "title")
     val navController = rememberNavController()
+    val bottomBarColor = viewContent
+        .optString(keyName = "backgroundColor", fallback = "")
+        .takeIf { it.isNotEmpty() }
+        ?.let { colorString ->
+            runCatching { Color(android.graphics.Color.parseColor(colorString)) }
+                .getOrNull()
+        } ?: MaterialTheme.colors.background
 
     Scaffold(
         bottomBar = {
-            BottomNavigation {
+            BottomNavigation(
+                modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
+                backgroundColor = bottomBarColor
+            ) {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
                 (0 until tabs.length()).forEach {

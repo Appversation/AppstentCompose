@@ -505,7 +505,7 @@ private fun AnnotatedString.Builder.appendMarkdownNode(
 @Composable
 fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier, customContentDataProvider: CustomContentDataProvider? = null) {
 
-    val sourceType = viewContent.getString(keyName = "sourceType")
+    val sourceType = viewContent.optString(keyName = "sourceType", fallback = "")
     val imageSource = viewContent.getString(keyName = "source")
 
     val scalingMode = if (viewContent.optString(keyName = "scalingMode", "") == "scaledToFill") {

@@ -102,11 +102,11 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier, navCont
 
             when (viewContent.getString(keyName = "type")) {
                 "spacer"    -> SpacerView(viewContent, modifier)
-                "divider"   -> DividerView(viewContent, modifier)
-                "gradientView" -> GradientView(viewContent, modifier)
+                "divider"   -> DividerView(viewContent, modifier, customContentDataProvider)
+                "gradientView" -> GradientView(viewContent, modifier, customContentDataProvider)
                 "text"      -> TextView(viewContent, modifier, customContentDataProvider)
                 "image"     -> ImageView(viewContent, modifier, customContentDataProvider)
-                "video"     -> VideoView(viewContent, modifier)
+                "video"     -> VideoView(viewContent, modifier, customContentDataProvider)
                 "webView"   -> WebView(viewContent = viewContent, modifier = modifier)
                 "tabbedView"-> {
                     val tabStyle = viewContent.optString(keyName = "tabStyle", fallback = "")
@@ -244,24 +244,37 @@ fun SpacerView(viewContent: JSONObject, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun DividerView(viewContent: JSONObject, modifier: Modifier = Modifier) {
+fun DividerView(
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    customContentDataProvider: CustomContentDataProvider? = null
+) {
+    val context = LocalContext.current
 
     Divider(
-        modifier = modifier.getModifier(viewContent)
+        modifier = modifier.getModifier(viewContent, context, customContentDataProvider)
     )
 }
 
 @Composable
-fun GradientView(viewContent: JSONObject, modifier: Modifier = Modifier) {
+fun GradientView(
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    customContentDataProvider: CustomContentDataProvider? = null
+) {
+    val context = LocalContext.current
 
     val colorJSONArray = viewContent.getJSONArray(keyName = "colors")
     val colors = arrayListOf<Color>()
     (0 until colorJSONArray.length()).forEach {
         val colorString = colorJSONArray.getString(it)
-        colors.add(it, Color(android.graphics.Color.parseColor(colorString)))
+        colors.add(
+            it,
+            resolveAppstentColor(colorString, context, customContentDataProvider) ?: Color.Transparent
+        )
     }
 
-    val gradientModifier = modifier.getModifier(viewContent)
+    val gradientModifier = modifier.getModifier(viewContent, context, customContentDataProvider)
 
     val heightModifier = if (viewContent.has(keyName = "height")) {
         val viewHeight = viewContent.getInt(keyName = "height")
@@ -281,6 +294,7 @@ fun GradientView(viewContent: JSONObject, modifier: Modifier = Modifier) {
 
 @Composable
 fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customContentDataProvider: CustomContentDataProvider? = null) {
+    val context = LocalContext.current
     var textString = ""
 
     if (viewContent.has(keyName = "text")) {
@@ -296,7 +310,7 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customConte
     var color: Color = Color.Black
     if (viewContent.has(keyName = "foregroundColor")) {
         val fgColor = viewContent.getString(keyName = "foregroundColor")
-        color = Color(android.graphics.Color.parseColor(fgColor))
+        color = resolveAppstentColor(fgColor, context, customContentDataProvider) ?: Color.Black
     }
 
     var textStyle = TextStyle.Default
@@ -358,7 +372,7 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customConte
             text = markdownText,
             color = color,
             style = textStyle,
-            modifier = modifier.getModifier(viewContent),
+            modifier = modifier.getModifier(viewContent, context, customContentDataProvider),
             maxLines = lineLimit,
             overflow = textOverflow,
             textAlign = textAlignment
@@ -368,7 +382,7 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customConte
         Text(textString,
             color = color,
             style = textStyle,
-            modifier = modifier.getModifier(viewContent),
+            modifier = modifier.getModifier(viewContent, context, customContentDataProvider),
             maxLines = lineLimit,
             overflow = textOverflow,
             textAlign = textAlignment
@@ -504,6 +518,7 @@ private fun AnnotatedString.Builder.appendMarkdownNode(
 
 @Composable
 fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier, customContentDataProvider: CustomContentDataProvider? = null) {
+    val context = LocalContext.current
 
     val sourceType = viewContent.optString(keyName = "sourceType", fallback = "")
     val imageSource = viewContent.getString(keyName = "source")
@@ -518,10 +533,10 @@ fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier, customCont
         "remote"    -> AsyncImage(imageSource, null,
             contentScale = scalingMode,
             modifier = modifier
-                .getModifier(viewContent)
+                .getModifier(viewContent, context, customContentDataProvider)
 
         )
-        "system"    -> Icon(imageSource, viewContent)
+        "system"    -> Icon(imageSource, viewContent, modifier, customContentDataProvider)
         "dynamic"   -> {
             val customImageSource:String? = customContentDataProvider?.getStringFor(imageSource)
             if (customImageSource != null) {
@@ -531,10 +546,10 @@ fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier, customCont
                         customImageSource,
                         null,
                         contentScale = scalingMode,
-                        modifier = modifier.getModifier(viewContent))
+                        modifier = modifier.getModifier(viewContent, context, customContentDataProvider))
                 } else {
                     customImageSource.toIntOrNull()?.let { imageId ->
-                        Image(painterResource(id = imageId),null, modifier = modifier.getModifier(viewContent))
+                        Image(painterResource(id = imageId),null, modifier = modifier.getModifier(viewContent, context, customContentDataProvider))
                     }
                 }
             }
@@ -545,7 +560,7 @@ fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier, customCont
                 Image(
                     painterResource(id = imageId),
                     null,
-                    modifier = modifier.getModifier(viewContent)
+                    modifier = modifier.getModifier(viewContent, context, customContentDataProvider)
                 )
             }
         }
@@ -553,7 +568,13 @@ fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier, customCont
 }
 
 @Composable
-fun Icon(name: String, viewContent: JSONObject, modifier: Modifier = Modifier) {
+fun Icon(
+    name: String,
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    customContentDataProvider: CustomContentDataProvider? = null
+) {
+    val context = LocalContext.current
 
     val icon = remember(name) { iconFromOutlinedPack(name) } ?: Icons.Outlined.Warning
 
@@ -561,12 +582,12 @@ fun Icon(name: String, viewContent: JSONObject, modifier: Modifier = Modifier) {
     var color: Color = Color.Black
     if (viewContent.has(keyName = "foregroundColor")) {
         val fgColor = viewContent.getString(keyName = "foregroundColor")
-        color = Color(android.graphics.Color.parseColor(fgColor))
+        color = resolveAppstentColor(fgColor, context, customContentDataProvider) ?: Color.Black
     }
 
     Icon(imageVector = icon, "",
         modifier = modifier
-            .getModifier(viewContent),
+            .getModifier(viewContent, context, customContentDataProvider),
         tint = color
     )
 }
@@ -598,7 +619,11 @@ private fun iconFromOutlinedPack(rawName: String): ImageVector? {
 }
 
 @Composable
-fun VideoView(viewContent: JSONObject, modifier: Modifier = Modifier) {
+fun VideoView(
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    customContentDataProvider: CustomContentDataProvider? = null
+) {
     val context = LocalContext.current
 
     val sourceType = viewContent.optString(keyName = "sourceType", fallback = "remote")
@@ -653,7 +678,7 @@ fun VideoView(viewContent: JSONObject, modifier: Modifier = Modifier) {
             }
         },
         modifier = modifier
-            .getModifier(viewContent))
+            .getModifier(viewContent, context, customContentDataProvider))
     ) {
         onDispose { exoPlayer.release() }
     }
@@ -708,6 +733,7 @@ enum class Direction {
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun PagerView(viewContent: JSONObject, modifier: Modifier = Modifier, navController: NavHostController? = null, customContentDataProvider: CustomContentDataProvider? = null) {
+    val context = LocalContext.current
     val tabs = viewContent.getJSONArray(keyName = "tabs")
 
     val pagerState = rememberPagerState()
@@ -716,7 +742,7 @@ fun PagerView(viewContent: JSONObject, modifier: Modifier = Modifier, navControl
 
         HorizontalPager(count = tabs.length(),
             state = pagerState,
-            modifier = modifier.getModifier(viewContent)
+            modifier = modifier.getModifier(viewContent, context, customContentDataProvider)
         ) { currentPage ->
 
             val tabContent = tabs.getJSONObject(currentPage)
@@ -730,8 +756,8 @@ fun PagerView(viewContent: JSONObject, modifier: Modifier = Modifier, navControl
             contentAlignment = Alignment.Center) {
             DotsIndicator(totalDots = tabs.length(),
                 selectedIndex = pagerState.currentPage,
-                selectedColor =  Color(android.graphics.Color.parseColor("#666666")),
-                unSelectedColor = Color(android.graphics.Color.parseColor("#E6E6E6"))
+                selectedColor = Color(0xFF666666),
+                unSelectedColor = Color(0xFFE6E6E6)
             )
         }
     }
@@ -769,12 +795,13 @@ fun DotsIndicator(totalDots : Int, selectedIndex : Int, selectedColor: Color, un
 
 @Composable
 fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier = Modifier, navController: NavHostController? = null, customContentDataProvider: CustomContentDataProvider? = null) {
+    val context = LocalContext.current
 
     val views = viewContent.getJSONArray(keyName = "views")
     val scrollable = viewContent.optBoolean(keyName ="scrollable", false)
 
     val appstentModifier = modifier
-        .getModifier(viewContent)
+        .getModifier(viewContent, context, customContentDataProvider)
         .fillMaxWidth()
         .wrapContentHeight()
 
@@ -865,7 +892,7 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
             //FIXME: nested box alignment not working
 
             Box(modifier = modifier
-                .getModifier(viewContent)
+                .getModifier(viewContent, context, customContentDataProvider)
                 .wrapContentHeight(),
                 contentAlignment = alignmentVal) {
 
@@ -998,6 +1025,7 @@ private fun getGridCells(viewContent: JSONObject): GridCells {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ListView(viewContent: JSONObject, modifier: Modifier = Modifier, navController: NavHostController? = null, customContentDataProvider: CustomContentDataProvider? = null) {
+    val context = LocalContext.current
 
     if (viewContent.has(keyName = "sections")) {
 
@@ -1011,7 +1039,7 @@ fun ListView(viewContent: JSONObject, modifier: Modifier = Modifier, navControll
                 val text = sectionObject.getString(keyName = "title")
                 stickyHeader {
                     Text(text = text,
-                        modifier = Modifier.getModifier(viewContent))
+                        modifier = Modifier.getModifier(viewContent, context, customContentDataProvider))
                 }
 
                 val views = sectionObject.getJSONArray(keyName = "views")
@@ -1039,10 +1067,11 @@ fun ListView(viewContent: JSONObject, modifier: Modifier = Modifier, navControll
 
 @Composable
 fun NavigationApstentView(viewContent: JSONObject, modifier: Modifier = Modifier, customContentDataProvider: CustomContentDataProvider? = null) {
+    val context = LocalContext.current
 
     val views = viewContent.getJSONArray(keyName = "views")
     val navTitle = viewContent.optString(keyName = "navLinkDestination", "")
-    val navModifier = modifier.getModifier(viewContent)
+    val navModifier = modifier.getModifier(viewContent, context, customContentDataProvider)
     val navController = rememberNavController()
 
     if (navTitle.isNotEmpty()) {
@@ -1058,26 +1087,27 @@ fun NavigationApstentView(viewContent: JSONObject, modifier: Modifier = Modifier
             }
 
             //crawl through the view hierarchy to create composable for routes
-            navigationComposable(viewContent, navModifier, this, customContentDataProvider)
+            navigationComposable(viewContent, navModifier, context, this, customContentDataProvider)
         }
     }
 }
 
 @Composable
 private fun CurrentNavScreenContent(views: JSONArray, modifier: Modifier = Modifier, navController: NavHostController? = null, customContentDataProvider: CustomContentDataProvider? = null) {
+    val context = LocalContext.current
 
     //create non navigation views
     (0 until views.length()).forEach {
 
         val viewContentIt = views.getJSONObject(it)
 
-        val mod = modifier.getModifier(viewContentIt)
+        val mod = modifier.getModifier(viewContentIt, context, customContentDataProvider)
 
         AppstentView(viewContent = viewContentIt, mod, navController, customContentDataProvider)
     }
 }
 
-private fun navigationComposable(viewContent: JSONObject, modifier: Modifier = Modifier, navGraphBuilder: NavGraphBuilder, customContentDataProvider: CustomContentDataProvider? = null) {
+private fun navigationComposable(viewContent: JSONObject, modifier: Modifier = Modifier, context: android.content.Context, navGraphBuilder: NavGraphBuilder, customContentDataProvider: CustomContentDataProvider? = null) {
 
 
     if (!viewContent.has(keyName = "views")) {
@@ -1110,8 +1140,8 @@ private fun navigationComposable(viewContent: JSONObject, modifier: Modifier = M
             }
 
         } else if (viewContentIt.has(keyName = "views")) {
-            val containerModifier = modifier.getModifier(viewContentIt)
-            navigationComposable(viewContentIt, containerModifier, navGraphBuilder, customContentDataProvider)
+            val containerModifier = modifier.getModifier(viewContentIt, context, customContentDataProvider)
+            navigationComposable(viewContentIt, containerModifier, context, navGraphBuilder, customContentDataProvider)
         }
     }
 }
@@ -1140,6 +1170,7 @@ fun NavigationApstentLink(viewContent: JSONObject, modifier: Modifier = Modifier
 
 @Composable
 fun BottomBar(viewContent: JSONObject, modifier: Modifier = Modifier, customContentDataProvider: CustomContentDataProvider? = null) {
+    val context = LocalContext.current
 
     val tabs = viewContent.getJSONArray(keyName = "tabs")
 
@@ -1153,8 +1184,7 @@ fun BottomBar(viewContent: JSONObject, modifier: Modifier = Modifier, customCont
         .optString(keyName = "backgroundColor", fallback = "")
         .takeIf { it.isNotEmpty() }
         ?.let { colorString ->
-            runCatching { Color(android.graphics.Color.parseColor(colorString)) }
-                .getOrNull()
+            resolveAppstentColor(colorString, context, customContentDataProvider)
         } ?: MaterialTheme.colors.background
 
     Scaffold(

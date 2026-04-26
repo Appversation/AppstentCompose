@@ -301,6 +301,10 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customConte
         textString = viewContent.getString(keyName = "text")
     }
 
+    if (viewContent.has(keyName = "previewText")) {
+        textString = viewContent.getString(keyName = "previewText")
+    }
+
     if (viewContent.has(keyName = "dynamicText")) {
         val dynamicTextFieldName = viewContent.getString(keyName = "dynamicText")
         textString = customContentDataProvider?.getStringFor(dynamicTextFieldName) ?: textString
@@ -802,8 +806,6 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
 
     val appstentModifier = modifier
         .getModifier(viewContent, context, customContentDataProvider)
-        .fillMaxWidth()
-        .wrapContentHeight()
 
     val columnModifier: Modifier = if (scrollable)
                                         appstentModifier
@@ -815,8 +817,8 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
                                         .horizontalScroll(rememberScrollState())
                                 else appstentModifier
 
-    var horizontalArrangement: Arrangement.Horizontal = Arrangement.SpaceBetween
-    var verticalArrangement: Arrangement.Vertical = Arrangement.SpaceBetween
+    var horizontalArrangement: Arrangement.Horizontal = Arrangement.Start
+    var verticalArrangement: Arrangement.Vertical = Arrangement.Top
 
     if (viewContent.has(keyName = "arrangement")) {
 
@@ -837,6 +839,10 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
             "end"   -> horizontalArrangement = Arrangement.End
             "top"   -> verticalArrangement = Arrangement.Top
             "bottom" -> verticalArrangement = Arrangement.Bottom
+            "center" -> {
+                horizontalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center
+            }
         }
 
     }
@@ -853,8 +859,17 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
             }
 
             (0 until views.length()).forEach {
-                AppstentView(viewContent = views.getJSONObject(it),
-                    modifier.align(alignmentVal),
+                val viewContentIt = views.getJSONObject(it)
+                var itemModifier: Modifier = Modifier.align(alignmentVal)
+
+                if (viewContentIt.optString("type") == "spacer") {
+                    if (!viewContentIt.has("minLength") && !viewContentIt.has("width") && !viewContentIt.has("height")) {
+                        itemModifier = itemModifier.weight(1f)
+                    }
+                }
+
+                AppstentView(viewContent = viewContentIt,
+                    itemModifier,
                     navController,
                     customContentDataProvider)
             }
@@ -872,8 +887,17 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
             Column(modifier = columnModifier,
                 verticalArrangement = verticalArrangement) {
                 (0 until views.length()).forEach {
-                    AppstentView(viewContent = views.getJSONObject(it),
-                        modifier.align(alignmentVal),
+                    val viewContentIt = views.getJSONObject(it)
+                    var itemModifier: Modifier = Modifier.align(alignmentVal)
+
+                    if (viewContentIt.optString("type") == "spacer") {
+                        if (!viewContentIt.has("minLength") && !viewContentIt.has("width") && !viewContentIt.has("height")) {
+                            itemModifier = itemModifier.weight(1f)
+                        }
+                    }
+
+                    AppstentView(viewContent = viewContentIt,
+                        itemModifier,
                         navController,
                         customContentDataProvider)
                 }
@@ -899,7 +923,7 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
                 (0 until views.length()).forEach {
 
                     AppstentView(viewContent = views.getJSONObject(it),
-                        modifier
+                        Modifier
                             .align(alignmentVal)
                             .matchParentSize()
                         , navController,
@@ -948,7 +972,7 @@ fun GridView(viewContent: JSONObject, modifier: Modifier = Modifier, navControll
             verticalArrangement = Arrangement.spacedBy(rowSpacing.dp)) {
 
             items(views.length()) {
-                AppstentView(viewContent = views.getJSONObject(it), modifier, navController, customContentDataProvider)
+                AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider)
             }
         }
     } else {
@@ -958,7 +982,7 @@ fun GridView(viewContent: JSONObject, modifier: Modifier = Modifier, navControll
             verticalArrangement = Arrangement.spacedBy(rowSpacing.dp)) {
 
             items(views.length()) {
-                AppstentView(viewContent = views.getJSONObject(it), modifier, navController, customContentDataProvider)
+                AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider)
             }
         }
     }
@@ -1047,7 +1071,7 @@ fun ListView(viewContent: JSONObject, modifier: Modifier = Modifier, navControll
                 (0 until views.length()).forEach {
 
                     item {
-                        AppstentView(viewContent = views.getJSONObject(it), modifier, navController, customContentDataProvider)
+                        AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider)
                     }
                 }
             }
@@ -1058,7 +1082,7 @@ fun ListView(viewContent: JSONObject, modifier: Modifier = Modifier, navControll
         LazyColumn(modifier = modifier) {
             (0 until views.length()).forEach {
                 item {
-                    AppstentView(viewContent = views.getJSONObject(it), modifier, navController, customContentDataProvider)
+                    AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider)
                 }
             }
         }

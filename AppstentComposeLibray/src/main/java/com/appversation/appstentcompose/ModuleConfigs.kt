@@ -7,6 +7,7 @@ object ModuleConfigs {
 
     var deploymentStage = "demo"
     var apiKey = ""
+    var inPreviewMode = false
     var customContentViewProvider: CustomContentViewProvider? = null
 
     interface CustomContentViewProvider {

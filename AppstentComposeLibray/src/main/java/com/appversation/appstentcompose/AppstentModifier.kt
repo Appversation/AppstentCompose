@@ -8,8 +8,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -32,6 +35,28 @@ fun Modifier.getModifier(
         .getBackgroundModifier(modifierContent, context, customContentDataProvider)
         .getBorderModifier(modifierContent, context, customContentDataProvider)
         .getFillSizeModifier(modifierContent)
+        .getPreviewSelectionModifier(modifierContent)
+}
+
+fun Modifier.getPreviewSelectionModifier(modifierContent: JSONObject) : Modifier {
+    if (!ModuleConfigs.inPreviewMode || !modifierContent.optBoolean(keyName = "isSelected", fallback = false)) {
+        return this
+    }
+
+    return this.drawWithContent {
+        drawContent()
+
+        val cornerRadius = 4.dp.toPx()
+        drawRoundRect(
+            color = Color(0x142196F3),
+            cornerRadius = CornerRadius(cornerRadius, cornerRadius)
+        )
+        drawRoundRect(
+            color = Color(0xFF2196F3),
+            cornerRadius = CornerRadius(cornerRadius, cornerRadius),
+            style = Stroke(width = 2.dp.toPx())
+        )
+    }
 }
 
 fun Modifier.getClipShapeModifier(modifierContent: JSONObject) : Modifier {

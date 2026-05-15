@@ -1,3 +1,6 @@
+import groovy.xml.XmlNodePrinter
+import groovy.xml.XmlParser
+
 buildscript {
     repositories {
         mavenCentral()

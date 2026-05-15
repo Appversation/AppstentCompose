@@ -14,11 +14,14 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.appversation.appstentcompose.ModuleConfigs.CustomContentDataProvider
 import org.json.JSONException
 import org.json.JSONObject
+import kotlin.math.abs
 
 fun Modifier.getModifier(
     modifierContent: JSONObject,
@@ -35,7 +38,56 @@ fun Modifier.getModifier(
         .getBackgroundModifier(modifierContent, context, customContentDataProvider)
         .getBorderModifier(modifierContent, context, customContentDataProvider)
         .getFillSizeModifier(modifierContent)
+        .getPreviewSelectionInputModifier(modifierContent)
         .getPreviewSelectionModifier(modifierContent)
+}
+
+fun Modifier.getPreviewSelectionInputModifier(modifierContent: JSONObject) : Modifier {
+    val previewPath = modifierContent.optString(keyName = "__appstentPreviewPath", fallback = "")
+
+    if (!ModuleConfigs.inPreviewMode || previewPath.isBlank()) {
+        return this
+    }
+
+    return this.pointerInput(previewPath) {
+        awaitPointerEventScope {
+            var downX = 0f
+            var downY = 0f
+            var isTrackingTap = false
+            var didMove = false
+            val moveTolerance = 8.dp.toPx()
+
+            while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Final)
+                val firstChange = event.changes.firstOrNull() ?: continue
+
+                if (firstChange.pressed && !isTrackingTap) {
+                    downX = firstChange.position.x
+                    downY = firstChange.position.y
+                    isTrackingTap = true
+                    didMove = false
+                    continue
+                }
+
+                if (firstChange.pressed && isTrackingTap) {
+                    if (abs(firstChange.position.x - downX) > moveTolerance ||
+                        abs(firstChange.position.y - downY) > moveTolerance) {
+                        didMove = true
+                    }
+                    continue
+                }
+
+                if (!firstChange.pressed && isTrackingTap) {
+                    if (!didMove) {
+                        ModuleConfigs.reportPreviewSelection(previewPath)
+                    }
+
+                    isTrackingTap = false
+                    didMove = false
+                }
+            }
+        }
+    }
 }
 
 fun Modifier.getPreviewSelectionModifier(modifierContent: JSONObject) : Modifier {

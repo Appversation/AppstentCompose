@@ -16,12 +16,17 @@ import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 
+import androidx.compose.material.Button
 import androidx.compose.material.Text as Material2Text
 import androidx.compose.material.Icon as Material2Icon
 import androidx.compose.material3.Icon // Your default Icon will be from M3
 
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
@@ -37,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -105,6 +111,7 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier, navCont
                 "divider"   -> DividerView(viewContent, modifier, customContentDataProvider)
                 "gradientView" -> GradientView(viewContent, modifier, customContentDataProvider)
                 "text"      -> TextView(viewContent, modifier, customContentDataProvider)
+                "link"      -> LinkView(viewContent, modifier, customContentDataProvider)
                 "image"     -> ImageView(viewContent, modifier, customContentDataProvider)
                 "video"     -> VideoView(viewContent, modifier, customContentDataProvider)
                 "webView"   -> WebView(viewContent = viewContent, modifier = modifier)
@@ -122,6 +129,9 @@ fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier, navCont
                 "included"  -> IncludedView(viewContent.optString(keyName = "source", ""), modifier, navController, customContentDataProvider)
                 "grid"      -> GridView(viewContent = viewContent, modifier = modifier, navController, customContentDataProvider)
                 "list"      -> ListView(viewContent = viewContent, modifier = modifier, navController, customContentDataProvider)
+                "disclosureGroup" -> DisclosureGroupView(viewContent, modifier, navController, customContentDataProvider)
+                "menu"      -> MenuView(viewContent, modifier, navController, customContentDataProvider)
+                "progressView" -> ProgressView(viewContent, modifier, customContentDataProvider)
                 "custom"    -> ModuleConfigs.customContentViewProvider?.CustomComposable(viewContent.getString(keyName = "customViewName"))
                 "navigationView" -> NavigationApstentView(viewContent = viewContent, modifier, customContentDataProvider)
                 "navigationLink" -> NavigationApstentLink(viewContent = viewContent, modifier, navController, customContentDataProvider)
@@ -517,6 +527,219 @@ private fun AnnotatedString.Builder.appendMarkdownNode(
             else -> appendMarkdownNode(current.firstChild, baseSpanStyle)
         }
         current = current.next
+    }
+}
+
+@Composable
+fun LinkView(
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    customContentDataProvider: CustomContentDataProvider? = null
+) {
+    val uriHandler = LocalUriHandler.current
+    val url = viewContent.optString(keyName = "url", fallback = "")
+
+    TextView(
+        viewContent = viewContent,
+        modifier = if (url.isNotEmpty()) {
+            modifier.clickable { uriHandler.openUri(url) }
+        } else {
+            modifier
+        },
+        customContentDataProvider = customContentDataProvider
+    )
+}
+
+@Composable
+fun DisclosureGroupView(
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    navController: NavHostController? = null,
+    customContentDataProvider: CustomContentDataProvider? = null
+) {
+    val context = LocalContext.current
+    var expanded by remember(viewContent) {
+        mutableStateOf(
+            if (viewContent.has(keyName = "isExpanded")) {
+                viewContent.optBoolean(keyName = "isExpanded", fallback = true)
+            } else {
+                true
+            }
+        )
+    }
+
+    Column(modifier = modifier.getModifier(viewContent, context, customContentDataProvider)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                RenderViewContentArray(
+                    views = viewContent.getJSONArray(keyName = "label"),
+                    navController = navController,
+                    customContentDataProvider = customContentDataProvider
+                )
+            }
+
+            Material2Icon(
+                imageVector = if (expanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
+                contentDescription = null
+            )
+        }
+
+        if (expanded) {
+            RenderViewContentArray(
+                views = viewContent.getJSONArray(keyName = "content"),
+                navController = navController,
+                customContentDataProvider = customContentDataProvider
+            )
+        }
+    }
+}
+
+@Composable
+fun MenuView(
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    navController: NavHostController? = null,
+    customContentDataProvider: CustomContentDataProvider? = null
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val title = viewContent.optString(keyName = "title", fallback = "")
+    val views = viewContent.getJSONArray(keyName = "views")
+    val context = LocalContext.current
+
+    Box(modifier = modifier.getModifier(viewContent, context, customContentDataProvider)) {
+        Button(onClick = { expanded = true }) {
+            Text(title)
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            (0 until views.length()).forEach {
+                DropdownMenuItem(
+                    onClick = { expanded = false }
+                ) {
+                    AppstentView(
+                        viewContent = views.getJSONObject(it),
+                        navController = navController,
+                        customContentDataProvider = customContentDataProvider
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProgressView(
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    customContentDataProvider: CustomContentDataProvider? = null
+) {
+    val context = LocalContext.current
+    val label = viewContent.optString(keyName = "label", fallback = "")
+    val total = viewContent.optDouble(keyName = "total", fallback = 100.0).takeIf { it > 0.0 } ?: 100.0
+    val progress = resolveProgressValue(viewContent, customContentDataProvider)
+    val progressFraction = (progress / total).toFloat().coerceIn(0f, 1f)
+    val progressType = viewContent.optString(keyName = "progressType", fallback = "linear")
+    val labelsHidden = viewContent.optBoolean(keyName = "labelsHidden", fallback = false)
+    val progressTintColor = viewContent
+        .optString(keyName = "progressTintColor", fallback = "")
+        .takeIf { it.isNotEmpty() }
+        ?.let { resolveAppstentColor(it, context, customContentDataProvider) }
+        ?: MaterialTheme.colors.primary
+
+    Column(modifier = modifier.getModifier(viewContent, context, customContentDataProvider)) {
+        if (!labelsHidden && label.isNotEmpty()) {
+            val labelColor = viewContent
+                .optString(keyName = "labelColor", fallback = "")
+                .takeIf { it.isNotEmpty() }
+                ?.let { resolveAppstentColor(it, context, customContentDataProvider) }
+                ?: Color.Unspecified
+
+            Text(text = label, color = labelColor)
+        }
+
+        if (progressType == "circular") {
+            CircularProgressIndicator(
+                progress = progressFraction,
+                color = progressTintColor
+            )
+        } else {
+            LinearProgressIndicator(
+                progress = progressFraction,
+                color = progressTintColor,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        if (!labelsHidden) {
+            val valueLabel = resolveProgressValueLabel(viewContent, customContentDataProvider)
+            if (valueLabel.isNotEmpty()) {
+                val valueLabelColor = viewContent
+                    .optString(keyName = "valueLabelColor", fallback = "")
+                    .takeIf { it.isNotEmpty() }
+                    ?.let { resolveAppstentColor(it, context, customContentDataProvider) }
+                    ?: Color.Unspecified
+
+                Text(
+                    text = valueLabel,
+                    color = valueLabelColor,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+private fun resolveProgressValue(
+    viewContent: JSONObject,
+    customContentDataProvider: CustomContentDataProvider?
+): Double {
+    val dynamicProgressField = viewContent.optString(keyName = "dynamicProgress", fallback = "")
+    if (dynamicProgressField.isNotEmpty()) {
+        return customContentDataProvider
+            ?.getStringFor(dynamicProgressField)
+            ?.toDoubleOrNull()
+            ?: 0.0
+    }
+
+    return viewContent.optDouble(keyName = "progress", fallback = 0.0)
+}
+
+private fun resolveProgressValueLabel(
+    viewContent: JSONObject,
+    customContentDataProvider: CustomContentDataProvider?
+): String {
+    val dynamicValueLabelField = viewContent.optString(keyName = "dynamicValueLabel", fallback = "")
+    if (dynamicValueLabelField.isNotEmpty()) {
+        return customContentDataProvider?.getStringFor(dynamicValueLabelField) ?: ""
+    }
+
+    return viewContent.optString(keyName = "currentValueLabel", fallback = "")
+}
+
+@Composable
+private fun RenderViewContentArray(
+    views: JSONArray,
+    modifier: Modifier = Modifier,
+    navController: NavHostController? = null,
+    customContentDataProvider: CustomContentDataProvider? = null
+) {
+    Column(modifier = modifier) {
+        (0 until views.length()).forEach {
+            AppstentView(
+                viewContent = views.getJSONObject(it),
+                navController = navController,
+                customContentDataProvider = customContentDataProvider
+            )
+        }
     }
 }
 

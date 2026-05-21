@@ -22,7 +22,6 @@ android {
     compileSdk 36
     defaultConfig {
         minSdk 26
-        targetSdk 36
 
         aarMetadata {
             minCompileSdk = 31
@@ -69,6 +68,12 @@ android {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
+    }
+    lint {
+        targetSdk 36
+    }
+    testOptions {
+        targetSdk 36
     }
 }
 

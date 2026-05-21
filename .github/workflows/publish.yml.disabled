@@ -1,3 +1,4 @@
+# Disabled: JitPack is now the publishing path for this library.
 name: Publish to GitHub Packages
 
 on:

@@ -23,7 +23,7 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
 
     // Base URL for content
     val contentURL: String
-        get() = NetworkConstants.BASE_URL + ModuleConfigs.deploymentStage + NetworkConstants.CONTENT_URL
+        get() = NetworkConstants.BASE_URL + ModuleConfigs.deploymentStageName + NetworkConstants.CONTENT_URL
 
     /**
      * Get content for a specific content ID
@@ -45,6 +45,7 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
                     "Accept" to "application/json",
                     "Content-Type" to "application/json",
                     "x-api-key" to ModuleConfigs.apiKey,
+                    "content-environment" to ModuleConfigs.normalizedContentEnvironment,
                     "folder-prefix" to subPath)
 
                 val responseString = RequestHandler.requestGET(URL(contentURL), additionalHeaders)

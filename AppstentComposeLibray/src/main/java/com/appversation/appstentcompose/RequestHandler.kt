@@ -63,7 +63,8 @@ object RequestHandler {
         val additionalHeaders = mapOf(
             "Accept" to "application/json",
             "Content-Type" to "application/json",
-            "x-api-key" to ModuleConfigs.apiKey)
+            "x-api-key" to ModuleConfigs.apiKey,
+            "content-environment" to ModuleConfigs.normalizedContentEnvironment)
 
         val responseString = requestGET(URL(urlString), additionalHeaders)
         return if (responseString.isNotEmpty()) JSONObject(responseString) else JSONObject()

@@ -30,14 +30,18 @@ object ModuleConfigs {
 
     internal val normalizedContentEnvironment: String
         get() {
-            val value = contentEnvironment.trim().lowercase()
-
-            require(Regex("^[a-z0-9][a-z0-9_-]{0,62}$").matches(value)) {
-                "Invalid contentEnvironment; use 1-63 lowercase letters, numbers, underscores, or hyphens"
-            }
-
-            return value
+            return normalizeContentEnvironment(contentEnvironment)
         }
+
+    fun normalizeContentEnvironment(contentEnvironment: String): String {
+        val value = contentEnvironment.trim().lowercase()
+
+        require(Regex("^[a-z0-9][a-z0-9_-]{0,62}$").matches(value)) {
+            "Invalid contentEnvironment; use 1-63 lowercase letters, numbers, underscores, or hyphens"
+        }
+
+        return value
+    }
 
     fun reportPreviewSelection(path: String) {
         if (!inPreviewMode || path.isBlank()) {

@@ -3,13 +3,17 @@ package com.appversation.appstentcompose
 import org.json.JSONObject
 import java.io.*
 import java.net.HttpURLConnection
-import java.net.MalformedURLException
 import java.net.URL
 import java.net.URLEncoder
 import javax.net.ssl.HttpsURLConnection
 
 
 object RequestHandler {
+    internal data class HttpResponse(
+        val statusCode: Int,
+        val body: String,
+        val url: URL
+    )
 
     @Throws(IOException::class)
     fun requestPOST(r_url: String?, postDataParams: JSONObject): String? {
@@ -60,38 +64,56 @@ object RequestHandler {
     @Throws(IOException::class)
     fun requestGET(urlString: String?): JSONObject {
 
-        val additionalHeaders = mapOf(
-            "Accept" to "application/json",
-            "Content-Type" to "application/json",
-            "x-api-key" to ModuleConfigs.apiKey,
-            "content-environment" to ModuleConfigs.normalizedContentEnvironment)
-
-        val responseString = requestGET(URL(urlString), additionalHeaders)
+        val responseString = requestGET(URL(urlString), appstentHeaders())
         return if (responseString.isNotEmpty()) JSONObject(responseString) else JSONObject()
     }
 
     @Throws(IOException::class)
     fun requestGET(url: URL, additionalHeaders:Map<String, String> = HashMap()): String {
-        val con = (url.openConnection() as HttpURLConnection)
-        additionalHeaders.forEach {
-            con.setRequestProperty(it.key, it.value)
+        val response = requestGETResponse(url, additionalHeaders)
+        val contentEnvironment = additionalHeaders["content-environment"]
+            ?: ModuleConfigs.normalizedContentEnvironment
+
+        if (response.statusCode in 200..299) {
+            return response.body
         }
 
-        con.requestMethod = "GET"
-        val responseCode = con.responseCode
-        println("Response Code :: $responseCode")
-        return if (responseCode == HttpURLConnection.HTTP_OK) { // connection ok
-            val `in` =
-                BufferedReader(InputStreamReader(con.inputStream))
-            var inputLine: String?
-            val response = StringBuffer()
-            while (`in`.readLine().also { inputLine = it } != null) {
-                response.append(inputLine)
+        throw ViewContentRequestException(
+            statusCode = response.statusCode,
+            body = response.body,
+            contentEnvironment = contentEnvironment,
+            url = url
+        )
+    }
+
+    @Throws(IOException::class)
+    internal fun requestGETResponse(url: URL, additionalHeaders: Map<String, String> = HashMap()): HttpResponse {
+        val con = (url.openConnection() as HttpURLConnection)
+        try {
+            additionalHeaders.forEach {
+                con.setRequestProperty(it.key, it.value)
             }
-            `in`.close()
-            response.toString()
-        } else {
-            ""
+
+            con.requestMethod = "GET"
+            val responseCode = con.responseCode
+            val stream = if (responseCode in 200..299) con.inputStream else con.errorStream
+            val response = stream?.bufferedReader()?.use { it.readText() } ?: ""
+
+            return HttpResponse(responseCode, response, url)
+        } finally {
+            con.disconnect()
         }
+    }
+
+    internal fun appstentHeaders(
+        contentEnvironment: String = ModuleConfigs.normalizedContentEnvironment,
+        extraHeaders: Map<String, String> = emptyMap()
+    ): Map<String, String> {
+        return mapOf(
+            "Accept" to "application/json",
+            "Content-Type" to "application/json",
+            "x-api-key" to ModuleConfigs.apiKey,
+            "content-environment" to contentEnvironment
+        ) + extraHeaders
     }
 }

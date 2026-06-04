@@ -33,6 +33,60 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
             RequestHandler.requestGET(urlString = contentURL + forContentId)
         }
     }
+
+    /**
+     * Validate that a content environment can be accessed with the configured API key.
+     */
+    suspend fun validateContentEnvironment(
+        contentEnvironment: String = ModuleConfigs.contentEnvironment
+    ): ContentEnvironmentValidationResult {
+        return withContext(Dispatchers.IO) {
+            val selectedEnvironment = ModuleConfigs.normalizeContentEnvironment(contentEnvironment)
+            val url = URL(contentURL)
+            val response = RequestHandler.requestGETResponse(
+                url = url,
+                additionalHeaders = RequestHandler.appstentHeaders(contentEnvironment = selectedEnvironment)
+            )
+
+            if (response.statusCode in 200..299) {
+                ContentEnvironmentValidationResult(
+                    contentEnvironment = selectedEnvironment,
+                    isValid = true,
+                    statusCode = response.statusCode,
+                    message = null
+                )
+            } else {
+                val error = ViewContentRequestException(
+                    statusCode = response.statusCode,
+                    body = response.body,
+                    contentEnvironment = selectedEnvironment,
+                    url = url
+                )
+
+                ContentEnvironmentValidationResult(
+                    contentEnvironment = selectedEnvironment,
+                    isValid = false,
+                    statusCode = response.statusCode,
+                    message = error.message
+                )
+            }
+        }
+    }
+
+    /**
+     * Throw a typed request exception unless the content environment is active.
+     */
+    suspend fun assertContentEnvironmentIsActive(
+        contentEnvironment: String = ModuleConfigs.contentEnvironment
+    ) {
+        withContext(Dispatchers.IO) {
+            val selectedEnvironment = ModuleConfigs.normalizeContentEnvironment(contentEnvironment)
+            RequestHandler.requestGET(
+                url = URL(contentURL),
+                additionalHeaders = RequestHandler.appstentHeaders(contentEnvironment = selectedEnvironment)
+            )
+        }
+    }
     
     /**
      * Get all documents recursively, optionally under a specific path
@@ -41,12 +95,9 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
         return withContext(Dispatchers.IO) {
             
             try {
-                val additionalHeaders = mapOf(
-                    "Accept" to "application/json",
-                    "Content-Type" to "application/json",
-                    "x-api-key" to ModuleConfigs.apiKey,
-                    "content-environment" to ModuleConfigs.normalizedContentEnvironment,
-                    "folder-prefix" to subPath)
+                val additionalHeaders = RequestHandler.appstentHeaders(
+                    extraHeaders = mapOf("folder-prefix" to subPath)
+                )
 
                 val responseString = RequestHandler.requestGET(URL(contentURL), additionalHeaders)
 
@@ -73,6 +124,10 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
                 
                 allDocs
             } catch (e: Exception) {
+                if (e is ViewContentRequestException || e is IllegalArgumentException) {
+                    throw e
+                }
+
                 e.printStackTrace()
                 emptyList()
             }

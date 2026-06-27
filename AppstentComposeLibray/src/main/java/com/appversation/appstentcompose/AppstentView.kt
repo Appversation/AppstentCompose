@@ -68,6 +68,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import com.appversation.appstentcompose.ModuleConfigs.ActionHandlerProvider
 import com.appversation.appstentcompose.ModuleConfigs.CustomContentDataProvider
 import com.appversation.appstentcompose.ui.theme.AppstentTheme
 import com.google.accompanist.pager.ExperimentalPagerApi
@@ -102,43 +103,77 @@ import java.util.*
 
 
 @Composable
-fun AppstentView(viewContent: JSONObject, modifier: Modifier = Modifier, navController: NavHostController? = null, customContentDataProvider: CustomContentDataProvider? = null) {
+fun AppstentView(
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    navController: NavHostController? = null,
+    customContentDataProvider: CustomContentDataProvider? = null,
+    actionHandlerProvider: ActionHandlerProvider? = null
+) {
     AppstentTheme {
         if (viewContent.has(keyName = "type") && isVisible(viewContent, customContentDataProvider)) {
+            val interactiveModifier = modifier.getTapHandlerModifier(viewContent, actionHandlerProvider)
 
             when (viewContent.getString(keyName = "type")) {
-                "spacer"    -> SpacerView(viewContent, modifier)
-                "divider"   -> DividerView(viewContent, modifier, customContentDataProvider)
-                "gradientView" -> GradientView(viewContent, modifier, customContentDataProvider)
-                "text"      -> TextView(viewContent, modifier, customContentDataProvider)
-                "link"      -> LinkView(viewContent, modifier, customContentDataProvider)
-                "image"     -> ImageView(viewContent, modifier, customContentDataProvider)
-                "video"     -> VideoView(viewContent, modifier, customContentDataProvider)
-                "webView"   -> WebView(viewContent = viewContent, modifier = modifier)
+                "spacer"    -> SpacerView(viewContent, interactiveModifier)
+                "divider"   -> DividerView(viewContent, interactiveModifier, customContentDataProvider)
+                "gradientView" -> GradientView(viewContent, interactiveModifier, customContentDataProvider)
+                "text"      -> TextView(viewContent, interactiveModifier, customContentDataProvider)
+                "link"      -> LinkView(viewContent, interactiveModifier, customContentDataProvider)
+                "image"     -> ImageView(viewContent, interactiveModifier, customContentDataProvider)
+                "video"     -> VideoView(viewContent, interactiveModifier, customContentDataProvider)
+                "webView"   -> WebView(viewContent = viewContent, modifier = interactiveModifier)
                 "tabbedView"-> {
                     val tabStyle = viewContent.optString(keyName = "tabStyle", fallback = "")
                     if (tabStyle == "pageStyle") {
-                        PagerView(viewContent, modifier, navController, customContentDataProvider)
+                        PagerView(viewContent, interactiveModifier, navController, customContentDataProvider, actionHandlerProvider)
                     } else {
-                        BottomBar(viewContent, modifier, customContentDataProvider = customContentDataProvider)
+                        BottomBar(
+                            viewContent,
+                            interactiveModifier,
+                            customContentDataProvider = customContentDataProvider,
+                            actionHandlerProvider = actionHandlerProvider
+                        )
                     }
                 }
-                "hStack"    -> StackView(viewContent = viewContent, direction = Direction.x, modifier, navController, customContentDataProvider)
-                "vStack"    -> StackView(viewContent = viewContent, direction = Direction.y, modifier, navController, customContentDataProvider)
-                "zStack"    -> StackView(viewContent = viewContent, direction = Direction.z, modifier, navController, customContentDataProvider)
-                "included"  -> IncludedView(viewContent.optString(keyName = "source", ""), modifier, navController, customContentDataProvider)
-                "grid"      -> GridView(viewContent = viewContent, modifier = modifier, navController, customContentDataProvider)
-                "list"      -> ListView(viewContent = viewContent, modifier = modifier, navController, customContentDataProvider)
-                "disclosureGroup" -> DisclosureGroupView(viewContent, modifier, navController, customContentDataProvider)
-                "menu"      -> MenuView(viewContent, modifier, navController, customContentDataProvider)
-                "progressView" -> ProgressView(viewContent, modifier, customContentDataProvider)
+                "hStack"    -> StackView(viewContent = viewContent, direction = Direction.x, interactiveModifier, navController, customContentDataProvider, actionHandlerProvider)
+                "vStack"    -> StackView(viewContent = viewContent, direction = Direction.y, interactiveModifier, navController, customContentDataProvider, actionHandlerProvider)
+                "zStack"    -> StackView(viewContent = viewContent, direction = Direction.z, interactiveModifier, navController, customContentDataProvider, actionHandlerProvider)
+                "included"  -> IncludedView(viewContent.optString(keyName = "source", ""), interactiveModifier, navController, customContentDataProvider, actionHandlerProvider)
+                "grid"      -> GridView(viewContent = viewContent, modifier = interactiveModifier, navController, customContentDataProvider, actionHandlerProvider)
+                "list"      -> ListView(viewContent = viewContent, modifier = interactiveModifier, navController, customContentDataProvider, actionHandlerProvider)
+                "disclosureGroup" -> DisclosureGroupView(viewContent, interactiveModifier, navController, customContentDataProvider, actionHandlerProvider)
+                "menu"      -> MenuView(viewContent, interactiveModifier, navController, customContentDataProvider, actionHandlerProvider)
+                "progressView" -> ProgressView(viewContent, interactiveModifier, customContentDataProvider)
                 "custom"    -> ModuleConfigs.customContentViewProvider?.CustomComposable(viewContent.getString(keyName = "customViewName"))
-                "navigationView" -> NavigationApstentView(viewContent = viewContent, modifier, customContentDataProvider)
-                "navigationLink" -> NavigationApstentLink(viewContent = viewContent, modifier, navController, customContentDataProvider)
+                "navigationView" -> NavigationApstentView(viewContent = viewContent, interactiveModifier, customContentDataProvider, actionHandlerProvider)
+                "navigationLink" -> NavigationApstentLink(viewContent = viewContent, interactiveModifier, navController, customContentDataProvider, actionHandlerProvider)
 
                 else -> { }
             }
         }
+    }
+}
+
+private fun Modifier.getTapHandlerModifier(
+    viewContent: JSONObject,
+    actionHandlerProvider: ActionHandlerProvider?
+): Modifier {
+    val handlerName = viewContent.optString(keyName = "tapHandlerName", fallback = "")
+
+    if (handlerName.isEmpty()) {
+        return this
+    }
+
+    val handlerData = if (viewContent.has(keyName = "tapHandlerData")) {
+        viewContent.getJSONObject(keyName = "tapHandlerData")
+    } else {
+        null
+    }
+
+    return this.clickable {
+        actionHandlerProvider?.handleTap(handlerName, handlerData)
+        ModuleConfigs.globalActionHandlerProvider?.handleTap(handlerName, handlerData)
     }
 }
 
@@ -555,7 +590,8 @@ fun DisclosureGroupView(
     viewContent: JSONObject,
     modifier: Modifier = Modifier,
     navController: NavHostController? = null,
-    customContentDataProvider: CustomContentDataProvider? = null
+    customContentDataProvider: CustomContentDataProvider? = null,
+    actionHandlerProvider: ActionHandlerProvider? = null
 ) {
     val context = LocalContext.current
     var expanded by remember(viewContent) {
@@ -579,7 +615,8 @@ fun DisclosureGroupView(
                 RenderViewContentArray(
                     views = viewContent.getJSONArray(keyName = "label"),
                     navController = navController,
-                    customContentDataProvider = customContentDataProvider
+                    customContentDataProvider = customContentDataProvider,
+                    actionHandlerProvider = actionHandlerProvider
                 )
             }
 
@@ -593,7 +630,8 @@ fun DisclosureGroupView(
             RenderViewContentArray(
                 views = viewContent.getJSONArray(keyName = "content"),
                 navController = navController,
-                customContentDataProvider = customContentDataProvider
+                customContentDataProvider = customContentDataProvider,
+                actionHandlerProvider = actionHandlerProvider
             )
         }
     }
@@ -604,7 +642,8 @@ fun MenuView(
     viewContent: JSONObject,
     modifier: Modifier = Modifier,
     navController: NavHostController? = null,
-    customContentDataProvider: CustomContentDataProvider? = null
+    customContentDataProvider: CustomContentDataProvider? = null,
+    actionHandlerProvider: ActionHandlerProvider? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
     val title = viewContent.optString(keyName = "title", fallback = "")
@@ -627,7 +666,8 @@ fun MenuView(
                     AppstentView(
                         viewContent = views.getJSONObject(it),
                         navController = navController,
-                        customContentDataProvider = customContentDataProvider
+                        customContentDataProvider = customContentDataProvider,
+                        actionHandlerProvider = actionHandlerProvider
                     )
                 }
             }
@@ -730,14 +770,16 @@ private fun RenderViewContentArray(
     views: JSONArray,
     modifier: Modifier = Modifier,
     navController: NavHostController? = null,
-    customContentDataProvider: CustomContentDataProvider? = null
+    customContentDataProvider: CustomContentDataProvider? = null,
+    actionHandlerProvider: ActionHandlerProvider? = null
 ) {
     Column(modifier = modifier) {
         (0 until views.length()).forEach {
             AppstentView(
                 viewContent = views.getJSONObject(it),
                 navController = navController,
-                customContentDataProvider = customContentDataProvider
+                customContentDataProvider = customContentDataProvider,
+                actionHandlerProvider = actionHandlerProvider
             )
         }
     }
@@ -959,7 +1001,13 @@ enum class Direction {
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun PagerView(viewContent: JSONObject, modifier: Modifier = Modifier, navController: NavHostController? = null, customContentDataProvider: CustomContentDataProvider? = null) {
+fun PagerView(
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    navController: NavHostController? = null,
+    customContentDataProvider: CustomContentDataProvider? = null,
+    actionHandlerProvider: ActionHandlerProvider? = null
+) {
     val context = LocalContext.current
     val tabs = viewContent.getJSONArray(keyName = "tabs")
 
@@ -974,7 +1022,13 @@ fun PagerView(viewContent: JSONObject, modifier: Modifier = Modifier, navControl
 
             val tabContent = tabs.getJSONObject(currentPage)
 
-            AppstentView(viewContent = tabContent.getJSONObject(keyName = "tabContent"), modifier, navController, customContentDataProvider)
+            AppstentView(
+                viewContent = tabContent.getJSONObject(keyName = "tabContent"),
+                modifier,
+                navController,
+                customContentDataProvider,
+                actionHandlerProvider
+            )
         }
 
         Spacer(modifier = Modifier.padding(4.dp))
@@ -1021,7 +1075,14 @@ fun DotsIndicator(totalDots : Int, selectedIndex : Int, selectedColor: Color, un
 }
 
 @Composable
-fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier = Modifier, navController: NavHostController? = null, customContentDataProvider: CustomContentDataProvider? = null) {
+fun StackView(
+    viewContent: JSONObject,
+    direction: Direction,
+    modifier: Modifier = Modifier,
+    navController: NavHostController? = null,
+    customContentDataProvider: CustomContentDataProvider? = null,
+    actionHandlerProvider: ActionHandlerProvider? = null
+) {
     val context = LocalContext.current
 
     val views = viewContent.getJSONArray(keyName = "views")
@@ -1094,7 +1155,8 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
                 AppstentView(viewContent = viewContentIt,
                     itemModifier,
                     navController,
-                    customContentDataProvider)
+                    customContentDataProvider,
+                    actionHandlerProvider)
             }
         }
 
@@ -1122,7 +1184,8 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
                     AppstentView(viewContent = viewContentIt,
                         itemModifier,
                         navController,
-                        customContentDataProvider)
+                        customContentDataProvider,
+                        actionHandlerProvider)
                 }
             }
         }
@@ -1150,7 +1213,8 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
                             .align(alignmentVal)
                             .matchParentSize()
                         , navController,
-                        customContentDataProvider)
+                        customContentDataProvider,
+                        actionHandlerProvider)
                 }
             }
         }
@@ -1159,7 +1223,13 @@ fun StackView(viewContent: JSONObject, direction: Direction, modifier: Modifier 
 
 
 @Composable
-fun IncludedView(fromSource: String, modifier: Modifier = Modifier, navController: NavHostController? = null, customContentDataProvider: CustomContentDataProvider? = null) {
+fun IncludedView(
+    fromSource: String,
+    modifier: Modifier = Modifier,
+    navController: NavHostController? = null,
+    customContentDataProvider: CustomContentDataProvider? = null,
+    actionHandlerProvider: ActionHandlerProvider? = null
+) {
 
     if (fromSource.isNotEmpty()) {
 
@@ -1170,12 +1240,18 @@ fun IncludedView(fromSource: String, modifier: Modifier = Modifier, navControlle
             includedContent = ViewContentRepository().getContent(fromSource)
         }
 
-        AppstentView(viewContent = includedContent, modifier = modifier, navController, customContentDataProvider)
+        AppstentView(viewContent = includedContent, modifier = modifier, navController, customContentDataProvider, actionHandlerProvider)
     }
 }
 
 @Composable
-fun GridView(viewContent: JSONObject, modifier: Modifier = Modifier, navController: NavHostController? = null, customContentDataProvider: CustomContentDataProvider? = null) {
+fun GridView(
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    navController: NavHostController? = null,
+    customContentDataProvider: CustomContentDataProvider? = null,
+    actionHandlerProvider: ActionHandlerProvider? = null
+) {
 
     val views = viewContent.getJSONArray(keyName = "views")
 
@@ -1195,7 +1271,7 @@ fun GridView(viewContent: JSONObject, modifier: Modifier = Modifier, navControll
             verticalArrangement = Arrangement.spacedBy(rowSpacing.dp)) {
 
             items(views.length()) {
-                AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider)
+                AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider, actionHandlerProvider)
             }
         }
     } else {
@@ -1205,7 +1281,7 @@ fun GridView(viewContent: JSONObject, modifier: Modifier = Modifier, navControll
             verticalArrangement = Arrangement.spacedBy(rowSpacing.dp)) {
 
             items(views.length()) {
-                AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider)
+                AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider, actionHandlerProvider)
             }
         }
     }
@@ -1271,7 +1347,13 @@ private fun getGridCells(viewContent: JSONObject): GridCells {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ListView(viewContent: JSONObject, modifier: Modifier = Modifier, navController: NavHostController? = null, customContentDataProvider: CustomContentDataProvider? = null) {
+fun ListView(
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    navController: NavHostController? = null,
+    customContentDataProvider: CustomContentDataProvider? = null,
+    actionHandlerProvider: ActionHandlerProvider? = null
+) {
     val context = LocalContext.current
 
     if (viewContent.has(keyName = "sections")) {
@@ -1294,7 +1376,7 @@ fun ListView(viewContent: JSONObject, modifier: Modifier = Modifier, navControll
                 (0 until views.length()).forEach {
 
                     item {
-                        AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider)
+                        AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider, actionHandlerProvider)
                     }
                 }
             }
@@ -1305,7 +1387,7 @@ fun ListView(viewContent: JSONObject, modifier: Modifier = Modifier, navControll
         LazyColumn(modifier = modifier) {
             (0 until views.length()).forEach {
                 item {
-                    AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider)
+                    AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider, actionHandlerProvider)
                 }
             }
         }
@@ -1313,7 +1395,12 @@ fun ListView(viewContent: JSONObject, modifier: Modifier = Modifier, navControll
 }
 
 @Composable
-fun NavigationApstentView(viewContent: JSONObject, modifier: Modifier = Modifier, customContentDataProvider: CustomContentDataProvider? = null) {
+fun NavigationApstentView(
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    customContentDataProvider: CustomContentDataProvider? = null,
+    actionHandlerProvider: ActionHandlerProvider? = null
+) {
     val context = LocalContext.current
 
     val views = viewContent.getJSONArray(keyName = "views")
@@ -1330,17 +1417,23 @@ fun NavigationApstentView(viewContent: JSONObject, modifier: Modifier = Modifier
         ) {
 
             composable(navTitle) {
-                CurrentNavScreenContent(views, navModifier, navController, customContentDataProvider)
+                CurrentNavScreenContent(views, navModifier, navController, customContentDataProvider, actionHandlerProvider)
             }
 
             //crawl through the view hierarchy to create composable for routes
-            navigationComposable(viewContent, navModifier, context, this, customContentDataProvider)
+            navigationComposable(viewContent, navModifier, context, this, customContentDataProvider, actionHandlerProvider)
         }
     }
 }
 
 @Composable
-private fun CurrentNavScreenContent(views: JSONArray, modifier: Modifier = Modifier, navController: NavHostController? = null, customContentDataProvider: CustomContentDataProvider? = null) {
+private fun CurrentNavScreenContent(
+    views: JSONArray,
+    modifier: Modifier = Modifier,
+    navController: NavHostController? = null,
+    customContentDataProvider: CustomContentDataProvider? = null,
+    actionHandlerProvider: ActionHandlerProvider? = null
+) {
     val context = LocalContext.current
 
     //create non navigation views
@@ -1350,11 +1443,18 @@ private fun CurrentNavScreenContent(views: JSONArray, modifier: Modifier = Modif
 
         val mod = modifier.getModifier(viewContentIt, context, customContentDataProvider)
 
-        AppstentView(viewContent = viewContentIt, mod, navController, customContentDataProvider)
+        AppstentView(viewContent = viewContentIt, mod, navController, customContentDataProvider, actionHandlerProvider)
     }
 }
 
-private fun navigationComposable(viewContent: JSONObject, modifier: Modifier = Modifier, context: android.content.Context, navGraphBuilder: NavGraphBuilder, customContentDataProvider: CustomContentDataProvider? = null) {
+private fun navigationComposable(
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    context: android.content.Context,
+    navGraphBuilder: NavGraphBuilder,
+    customContentDataProvider: CustomContentDataProvider? = null,
+    actionHandlerProvider: ActionHandlerProvider? = null
+) {
 
 
     if (!viewContent.has(keyName = "views")) {
@@ -1382,19 +1482,30 @@ private fun navigationComposable(viewContent: JSONObject, modifier: Modifier = M
                 val route = viewContentIt.getString(keyName = "route")
 
                 navGraphBuilder.composable(route) {
-                    IncludedView(fromSource = route, modifier, customContentDataProvider = customContentDataProvider)
+                    IncludedView(
+                        fromSource = route,
+                        modifier,
+                        customContentDataProvider = customContentDataProvider,
+                        actionHandlerProvider = actionHandlerProvider
+                    )
                 }
             }
 
         } else if (viewContentIt.has(keyName = "views")) {
             val containerModifier = modifier.getModifier(viewContentIt, context, customContentDataProvider)
-            navigationComposable(viewContentIt, containerModifier, context, navGraphBuilder, customContentDataProvider)
+            navigationComposable(viewContentIt, containerModifier, context, navGraphBuilder, customContentDataProvider, actionHandlerProvider)
         }
     }
 }
 
 @Composable
-fun NavigationApstentLink(viewContent: JSONObject, modifier: Modifier = Modifier, navController: NavHostController? = null, customContentDataProvider: CustomContentDataProvider? = null) {
+fun NavigationApstentLink(
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    navController: NavHostController? = null,
+    customContentDataProvider: CustomContentDataProvider? = null,
+    actionHandlerProvider: ActionHandlerProvider? = null
+) {
 
     val triggerView = viewContent.getJSONObject(keyName = "triggerView")
 
@@ -1412,11 +1523,16 @@ fun NavigationApstentLink(viewContent: JSONObject, modifier: Modifier = Modifier
             navController?.navigate(route)
         }
 
-    AppstentView(viewContent = triggerView, navLinkModifier, navController, customContentDataProvider)
+    AppstentView(viewContent = triggerView, navLinkModifier, navController, customContentDataProvider, actionHandlerProvider)
 }
 
 @Composable
-fun BottomBar(viewContent: JSONObject, modifier: Modifier = Modifier, customContentDataProvider: CustomContentDataProvider? = null) {
+fun BottomBar(
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    customContentDataProvider: CustomContentDataProvider? = null,
+    actionHandlerProvider: ActionHandlerProvider? = null
+) {
     val context = LocalContext.current
 
     val tabs = viewContent.getJSONArray(keyName = "tabs")
@@ -1449,7 +1565,13 @@ fun BottomBar(viewContent: JSONObject, modifier: Modifier = Modifier, customCont
                     val icon = tab.getJSONObject(keyName = "icon")
 
                     BottomNavigationItem(
-                        icon = { AppstentView(viewContent = icon, customContentDataProvider = customContentDataProvider) },
+                        icon = {
+                            AppstentView(
+                                viewContent = icon,
+                                customContentDataProvider = customContentDataProvider,
+                                actionHandlerProvider = actionHandlerProvider
+                            )
+                        },
                         label = { Text(title) },
                         selected = currentDestination?.hierarchy?.any { it.route == title } == true,
                         onClick = {
@@ -1481,7 +1603,13 @@ fun BottomBar(viewContent: JSONObject, modifier: Modifier = Modifier, customCont
                 val tabContent = tab.getJSONObject(keyName = "tabContent")
 
                 composable(title) {
-                    AppstentView(viewContent = tabContent, modifier = modifier, navController = navController, customContentDataProvider)
+                    AppstentView(
+                        viewContent = tabContent,
+                        modifier = modifier,
+                        navController = navController,
+                        customContentDataProvider,
+                        actionHandlerProvider
+                    )
                 }
             }
         }

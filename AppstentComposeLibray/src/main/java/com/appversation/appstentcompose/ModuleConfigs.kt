@@ -23,10 +23,11 @@ object ModuleConfigs {
     var inPreviewMode = false
     var previewSelectionHandler: ((String) -> Unit)? = null
     var customContentViewProvider: CustomContentViewProvider? = null
+    var globalActionHandlerProvider: ActionHandlerProvider? = null
 
     private var pendingPreviewSelectionPath: String? = null
     private var isPreviewSelectionDispatchScheduled = false
-    private val mainHandler = Handler(Looper.getMainLooper())
+    private val mainHandler: Handler by lazy { Handler(Looper.getMainLooper()) }
 
     internal val normalizedContentEnvironment: String
         get() {
@@ -99,6 +100,11 @@ object ModuleConfigs {
         fun getStringFor(fieldName: String): String
 
         fun getVisibility(fieldName: String): Boolean
+    }
+
+    interface ActionHandlerProvider {
+
+        fun handleTap(handlerName: String, data: JSONObject?)
     }
 
     interface AppstentViewNavigationProvider {

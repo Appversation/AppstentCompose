@@ -19,12 +19,26 @@ object ModuleConfigs {
         get() = deploymentStage.value
 
     var contentEnvironment = "prod"
+        set(value) {
+            if (field != value) {
+                field = value
+                clearDesignTokens()
+            }
+        }
     var apiKey = ""
+        set(value) {
+            if (field != value) {
+                field = value
+                clearDesignTokens()
+            }
+        }
+    var automaticallyLoadDesignTokens = true
     var inPreviewMode = false
     var previewSelectionHandler: ((String) -> Unit)? = null
     var customContentViewProvider: CustomContentViewProvider? = null
     var globalActionHandlerProvider: ActionHandlerProvider? = null
     var designTokenResolver: AppstentDesignTokenResolver = AppstentDesignTokenResolver()
+    internal var loadedDesignTokenKey: String? = null
 
     private var pendingPreviewSelectionPath: String? = null
     private var isPreviewSelectionDispatchScheduled = false
@@ -51,6 +65,11 @@ object ModuleConfigs {
 
     fun clearDesignTokens() {
         designTokenResolver = AppstentDesignTokenResolver()
+        loadedDesignTokenKey = null
+    }
+
+    internal fun designTokenLoadKey(contentEnvironment: String = ModuleConfigs.contentEnvironment): String {
+        return "${apiKey.trim()}:${normalizeContentEnvironment(contentEnvironment)}"
     }
 
     fun reportPreviewSelection(path: String) {

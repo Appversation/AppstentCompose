@@ -30,6 +30,7 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
      */
     suspend fun getContent(forContentId: String): JSONObject {
         return withContext(Dispatchers.IO) {
+            ensureActiveDesignTokensLoaded()
             RequestHandler.requestGET(urlString = contentURL + forContentId)
         }
     }
@@ -118,6 +119,7 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
         return try {
             fetchActiveDesignTokens(contentEnvironment).also {
                 ModuleConfigs.setDesignTokens(it.resolver)
+                ModuleConfigs.loadedDesignTokenKey = ModuleConfigs.designTokenLoadKey(contentEnvironment)
             }
         } catch (error: ViewContentRequestException) {
             if (error.statusCode != 404) {
@@ -126,11 +128,73 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
 
             val selectedEnvironment = ModuleConfigs.normalizeContentEnvironment(contentEnvironment)
             ModuleConfigs.clearDesignTokens()
+            ModuleConfigs.loadedDesignTokenKey = ModuleConfigs.designTokenLoadKey(contentEnvironment)
             AppstentRemoteDesignTokens(
                 contentEnvironment = selectedEnvironment,
                 metadata = null,
                 tokens = null,
                 resolver = AppstentDesignTokenResolver()
+            )
+        }
+    }
+
+    /**
+     * Ensure active design tokens are installed for the current API key and content environment.
+     *
+     * This is called automatically by content-loading APIs. Token loading failures fail open so
+     * existing non-tokenized content keeps rendering; callers that need strict error handling can
+     * still call loadActiveDesignTokens directly.
+     */
+    suspend fun ensureActiveDesignTokensLoaded(
+        contentEnvironment: String = ModuleConfigs.contentEnvironment,
+        force: Boolean = false
+    ): AppstentRemoteDesignTokens {
+        val loadKey = ModuleConfigs.designTokenLoadKey(contentEnvironment)
+        if (!ModuleConfigs.automaticallyLoadDesignTokens) {
+            return AppstentRemoteDesignTokens(
+                contentEnvironment = ModuleConfigs.normalizeContentEnvironment(contentEnvironment),
+                metadata = null,
+                tokens = null,
+                resolver = ModuleConfigs.designTokenResolver
+            )
+        }
+
+        if (!force && ModuleConfigs.loadedDesignTokenKey == loadKey) {
+            return AppstentRemoteDesignTokens(
+                contentEnvironment = ModuleConfigs.normalizeContentEnvironment(contentEnvironment),
+                metadata = null,
+                tokens = null,
+                resolver = ModuleConfigs.designTokenResolver
+            )
+        }
+
+        return try {
+            loadActiveDesignTokens(contentEnvironment)
+        } catch (error: ViewContentRequestException) {
+            if (error.statusCode == 404) {
+                val selectedEnvironment = ModuleConfigs.normalizeContentEnvironment(contentEnvironment)
+                ModuleConfigs.clearDesignTokens()
+                ModuleConfigs.loadedDesignTokenKey = loadKey
+                AppstentRemoteDesignTokens(
+                    contentEnvironment = selectedEnvironment,
+                    metadata = null,
+                    tokens = null,
+                    resolver = AppstentDesignTokenResolver()
+                )
+            } else {
+                AppstentRemoteDesignTokens(
+                    contentEnvironment = ModuleConfigs.normalizeContentEnvironment(contentEnvironment),
+                    metadata = null,
+                    tokens = null,
+                    resolver = ModuleConfigs.designTokenResolver
+                )
+            }
+        } catch (_: Exception) {
+            AppstentRemoteDesignTokens(
+                contentEnvironment = ModuleConfigs.normalizeContentEnvironment(contentEnvironment),
+                metadata = null,
+                tokens = null,
+                resolver = ModuleConfigs.designTokenResolver
             )
         }
     }

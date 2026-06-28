@@ -24,6 +24,37 @@ class ExampleUnitTest {
     }
 
     @Test
+    fun changingConfiguration_clearsLoadedDesignTokens() {
+        val originalEnvironment = ModuleConfigs.contentEnvironment
+        val originalApiKey = ModuleConfigs.apiKey
+        val originalResolver = ModuleConfigs.designTokenResolver
+        val originalLoadKey = ModuleConfigs.loadedDesignTokenKey
+
+        try {
+            ModuleConfigs.apiKey = "first-key"
+            ModuleConfigs.contentEnvironment = "prod"
+            ModuleConfigs.setDesignTokens(
+                AppstentDesignTokenResolver(
+                    org.json.JSONObject(
+                        """{"color":{"brand":{"${'$'}type":"color","${'$'}value":"#146C78"}}}"""
+                    )
+                )
+            )
+            ModuleConfigs.loadedDesignTokenKey = ModuleConfigs.designTokenLoadKey()
+
+            ModuleConfigs.contentEnvironment = "qa"
+
+            assertTrue(ModuleConfigs.designTokenResolver.tokens.isEmpty())
+            assertNull(ModuleConfigs.loadedDesignTokenKey)
+        } finally {
+            ModuleConfigs.contentEnvironment = originalEnvironment
+            ModuleConfigs.apiKey = originalApiKey
+            ModuleConfigs.designTokenResolver = originalResolver
+            ModuleConfigs.loadedDesignTokenKey = originalLoadKey
+        }
+    }
+
+    @Test
     fun invalidContentEnvironment_isRejected() {
         assertThrows(IllegalArgumentException::class.java) {
             ModuleConfigs.normalizeContentEnvironment("../prod")

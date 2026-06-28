@@ -24,6 +24,7 @@ object ModuleConfigs {
     var previewSelectionHandler: ((String) -> Unit)? = null
     var customContentViewProvider: CustomContentViewProvider? = null
     var globalActionHandlerProvider: ActionHandlerProvider? = null
+    var designTokenResolver: AppstentDesignTokenResolver = AppstentDesignTokenResolver()
 
     private var pendingPreviewSelectionPath: String? = null
     private var isPreviewSelectionDispatchScheduled = false
@@ -42,6 +43,14 @@ object ModuleConfigs {
         }
 
         return value
+    }
+
+    fun setDesignTokens(resolver: AppstentDesignTokenResolver) {
+        designTokenResolver = resolver
+    }
+
+    fun clearDesignTokens() {
+        designTokenResolver = AppstentDesignTokenResolver()
     }
 
     fun reportPreviewSelection(path: String) {

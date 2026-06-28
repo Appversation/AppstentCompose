@@ -87,6 +87,53 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
             )
         }
     }
+
+    /**
+     * Fetch active DTCG design tokens for the configured content environment.
+     */
+    suspend fun fetchActiveDesignTokens(
+        contentEnvironment: String = ModuleConfigs.contentEnvironment
+    ): AppstentRemoteDesignTokens {
+        return withContext(Dispatchers.IO) {
+            val selectedEnvironment = ModuleConfigs.normalizeContentEnvironment(contentEnvironment)
+            val url = URL(contentURL + "__appstent/design-tokens")
+            val responseString = RequestHandler.requestGET(
+                url = url,
+                additionalHeaders = RequestHandler.appstentHeaders(contentEnvironment = selectedEnvironment)
+            )
+            val response = if (responseString.isNotEmpty()) JSONObject(responseString) else JSONObject()
+            parseRemoteDesignTokens(response, selectedEnvironment)
+        }
+    }
+
+    /**
+     * Fetch active DTCG design tokens and install the resolver into ModuleConfigs.
+     *
+     * If the backend returns 404 because no active tokens are configured, the resolver is cleared
+     * and an empty remote token result is returned so existing content keeps rendering.
+     */
+    suspend fun loadActiveDesignTokens(
+        contentEnvironment: String = ModuleConfigs.contentEnvironment
+    ): AppstentRemoteDesignTokens {
+        return try {
+            fetchActiveDesignTokens(contentEnvironment).also {
+                ModuleConfigs.setDesignTokens(it.resolver)
+            }
+        } catch (error: ViewContentRequestException) {
+            if (error.statusCode != 404) {
+                throw error
+            }
+
+            val selectedEnvironment = ModuleConfigs.normalizeContentEnvironment(contentEnvironment)
+            ModuleConfigs.clearDesignTokens()
+            AppstentRemoteDesignTokens(
+                contentEnvironment = selectedEnvironment,
+                metadata = null,
+                tokens = null,
+                resolver = AppstentDesignTokenResolver()
+            )
+        }
+    }
     
     /**
      * Get all documents recursively, optionally under a specific path
@@ -229,5 +276,32 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
             e.printStackTrace()
             Date() 
         }
+    }
+
+    private fun parseRemoteDesignTokens(
+        response: JSONObject,
+        selectedEnvironment: String
+    ): AppstentRemoteDesignTokens {
+        val tokens = response.optJSONObject("tokens")
+        return AppstentRemoteDesignTokens(
+            contentEnvironment = response.optString("contentEnvironment", selectedEnvironment),
+            metadata = response.optJSONObject("designTokens")?.let(::parseRemoteDesignTokenMetadata),
+            tokens = tokens,
+            resolver = tokens?.let { AppstentDesignTokenResolver(it) } ?: AppstentDesignTokenResolver()
+        )
+    }
+
+    private fun parseRemoteDesignTokenMetadata(metadata: JSONObject): AppstentRemoteDesignTokenMetadata {
+        return AppstentRemoteDesignTokenMetadata(
+            active = metadata.optBoolean("active", false),
+            fileName = metadata.optString("fileName").takeIf { it.isNotEmpty() },
+            s3Key = metadata.optString("s3Key").takeIf { it.isNotEmpty() },
+            contentType = metadata.optString("contentType", "application/json"),
+            tokenCount = metadata.optInt("tokenCount", 0),
+            checksum = metadata.optString("checksum")
+                .takeIf { it.isNotEmpty() }
+                ?: metadata.optString("version").takeIf { it.isNotEmpty() }?.let { "sha256:$it" },
+            updatedBy = metadata.optString("updatedBy").takeIf { it.isNotEmpty() }
+        )
     }
 }

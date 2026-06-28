@@ -126,7 +126,7 @@ fun Modifier.getClipShapeModifier(modifierContent: JSONObject) : Modifier {
 fun Modifier.getCornerRadiusModifier(modifierContent: JSONObject) : Modifier {
 
     return try {
-        val cornerRadius = modifierContent.getInt(keyName = "cornerRadius")
+        val cornerRadius = modifierContent.appstentResolvedDouble(keyName = "cornerRadius")
         this.clip(RoundedCornerShape(cornerRadius.dp))
     } catch (e: JSONException) {
         this
@@ -163,11 +163,13 @@ fun Modifier.getBorderModifier(
             this
         } else {
             val borderWidth = modifierContent.optDouble(keyName = "borderWidth", fallback = 1.0)
+                .takeUnless { modifierContent.optString(keyName = "borderWidth", fallback = "").startsWith("{") }
+                ?: modifierContent.appstentResolvedDouble(keyName = "borderWidth", fallback = 1.0)
 
             val borderShape = when {
                 modifierContent.optString(keyName = "clipShape", fallback = "") == "circle" -> CircleShape
                 modifierContent.has(keyName = "cornerRadius") -> {
-                    val cornerRadius = modifierContent.getInt(keyName = "cornerRadius")
+                    val cornerRadius = modifierContent.appstentResolvedDouble(keyName = "cornerRadius")
                     RoundedCornerShape(cornerRadius.dp)
                 }
                 else -> RoundedCornerShape(0.dp)
@@ -185,7 +187,7 @@ fun Modifier.getBorderModifier(
 fun Modifier.getPaddingModifier(modifierContent: JSONObject) : Modifier {
 
     return try {
-        val padding = modifierContent.getInt(keyName = "padding")
+        val padding = modifierContent.appstentResolvedDouble(keyName = "padding")
         this.padding(padding.dp)
     } catch (e: JSONException) {
         this
@@ -200,7 +202,7 @@ fun Modifier.getFrameSizeModifier(modifierContent: JSONObject) : Modifier {
 
         modifier = if (modifierContent.has(keyName = "width")) {
 
-            val width = modifierContent.getDouble(keyName = "width")
+            val width = modifierContent.appstentResolvedDouble(keyName = "width")
 
             modifier.requiredWidth(width.dp)
         } else {
@@ -208,31 +210,31 @@ fun Modifier.getFrameSizeModifier(modifierContent: JSONObject) : Modifier {
         }
 
         if (modifierContent.has(keyName = "height")) {
-            val height = modifierContent.getDouble(keyName = "height")
+            val height = modifierContent.appstentResolvedDouble(keyName = "height")
 
             modifier = modifier.requiredHeight(height.dp)
         }
 
         val minWidth = if (modifierContent.has(keyName = "minWidth")) {
-            modifierContent.getDouble(keyName = "minWidth").dp
+            modifierContent.appstentResolvedDouble(keyName = "minWidth").dp
         } else {
             Dp.Unspecified
         }
 
         val minHeight = if (modifierContent.has(keyName = "minHeight")) {
-            modifierContent.getDouble(keyName = "minHeight").dp
+            modifierContent.appstentResolvedDouble(keyName = "minHeight").dp
         } else {
             Dp.Unspecified
         }
 
         val maxWidth = if (modifierContent.has(keyName = "maxWidth")) {
-            modifierContent.getDouble(keyName = "maxWidth").dp
+            modifierContent.appstentResolvedDouble(keyName = "maxWidth").dp
         } else {
             Dp.Unspecified
         }
 
         val maxHeight = if (modifierContent.has(keyName = "maxHeight")) {
-            modifierContent.getDouble(keyName = "maxHeight").dp
+            modifierContent.appstentResolvedDouble(keyName = "maxHeight").dp
         } else {
             Dp.Unspecified
         }
@@ -283,8 +285,8 @@ fun Modifier.getOffsetModifier(modifierContent: JSONObject) : Modifier {
 
     return try {
 
-        val offsetX = modifierContent.optDouble(keyName = "offsetX", 0.0)
-        val offsetY = modifierContent.optDouble(keyName = "offsetY", 0.0)
+        val offsetX = modifierContent.appstentResolvedDouble(keyName = "offsetX", fallback = 0.0)
+        val offsetY = modifierContent.appstentResolvedDouble(keyName = "offsetY", fallback = 0.0)
 
         return this.offset(x = offsetX.dp, y= offsetY.dp)
 
@@ -304,15 +306,20 @@ fun Modifier.getShadowModifier(
     return try {
         modifier = if (modifierContent.has(keyName = "shadow")) {
 
-            val shadowObject = modifierContent.getJSONObject(keyName = "shadow")
-            val colorString = shadowObject.optString("color", fallback = "#000000")
-            val color = resolveAppstentColor(colorString, context, customContentDataProvider)
-                ?: Color(android.graphics.Color.parseColor("#000000"))
+            val rawShadow = modifierContent.opt("shadow")
+            val shadowObject = when {
+                rawShadow is JSONObject -> rawShadow
+                rawShadow is String && AppstentDesignTokenResolver.isTokenReference(rawShadow) ->
+                    ModuleConfigs.designTokenResolver.resolveShadow(rawShadow).value
+                else -> null
+            }
 
-            if (shadowObject.has(keyName = "radius") && shadowObject.has(keyName = "spread")) {
-
-                val radius = shadowObject.getDouble(keyName = "radius")
-                val spread = shadowObject.getDouble(keyName ="spread")
+            if (shadowObject != null && shadowObject.has(keyName = "radius") && shadowObject.has(keyName = "spread")) {
+                val colorString = shadowObject.optString("color", fallback = "#000000")
+                val color = resolveAppstentColor(colorString, context, customContentDataProvider)
+                    ?: Color(android.graphics.Color.parseColor("#000000"))
+                val radius = shadowObject.appstentResolvedDouble(keyName = "radius")
+                val spread = shadowObject.appstentResolvedDouble(keyName ="spread")
 
                 modifier.dropShadow(
                     shape = RoundedCornerShape(radius.dp),
@@ -344,10 +351,14 @@ internal fun resolveAppstentColor(
         return null
     }
 
-    val resolvedValue = customContentDataProvider
-        ?.getStringFor(rawValue)
-        ?.takeIf { it.isNotEmpty() }
-        ?: rawValue
+    val resolvedValue = if (AppstentDesignTokenResolver.isTokenReference(rawValue)) {
+        ModuleConfigs.designTokenResolver.resolveColor(rawValue).value
+    } else {
+        customContentDataProvider
+            ?.getStringFor(rawValue)
+            ?.takeIf { it.isNotEmpty() }
+            ?: rawValue
+    }
 
     return parseAppstentColor(resolvedValue, context)
 }

@@ -23,3 +23,17 @@ if (!result.isValid) {
 ```
 
 Content requests throw `ViewContentRequestException` for non-2xx backend responses, including inactive or unknown content environments.
+
+## Design Tokens
+
+Content environments can have one active DTCG design token file. Load it before rendering tokenized content:
+
+```kotlin
+ModuleConfigs.apiKey = "<appstent-api-key>"
+ModuleConfigs.contentEnvironment = "qa"
+
+val repository = ViewContentRepository()
+repository.loadActiveDesignTokens()
+```
+
+The renderer resolves exact braced token references such as `{color.text.primary}` in color, dimension, font, progress, shadow, spacing, and frame fields. Missing or invalid token references fall back to the original content value so existing content keeps rendering.

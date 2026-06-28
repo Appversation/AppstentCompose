@@ -32,7 +32,7 @@ fun getCustomFontStyle(viewContent: JSONObject) : TextStyle {
     // Font family
     var fontFamily: FontFamily? = null
     if (viewContent.has(keyName = "font")) {
-        val androidFontFamily = viewContent.getString(keyName = "font")
+        val androidFontFamily = viewContent.appstentResolvedString(keyName = "font")
         fontFamily = when (androidFontFamily) {
             "cursive"   -> FontFamily.Cursive
             "serif"     -> FontFamily.Serif
@@ -46,7 +46,7 @@ fun getCustomFontStyle(viewContent: JSONObject) : TextStyle {
     var fontSize = TextUnit.Unspecified
     if (viewContent.has(keyName = "fontSize")) {
 
-        val fontSizeVal = viewContent.getDouble(keyName = "fontSize")
+        val fontSizeVal = viewContent.appstentResolvedDouble(keyName = "fontSize")
         fontSize = TextUnit(fontSizeVal.toFloat(), TextUnitType.Sp)
     }
 
@@ -54,7 +54,7 @@ fun getCustomFontStyle(viewContent: JSONObject) : TextStyle {
     var fontWeight: FontWeight? = null
     if (viewContent.has(keyName = "fontWeight")) {
 
-        val fontWeightVal = viewContent.getString(keyName = "fontWeight")
+        val fontWeightVal = viewContent.appstentResolvedString(keyName = "fontWeight")
         fontWeight = when(fontWeightVal) {
             "ultraLight"    -> FontWeight.ExtraLight
             "thin"          -> FontWeight.Thin

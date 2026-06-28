@@ -272,7 +272,7 @@ fun SpacerView(viewContent: JSONObject, modifier: Modifier = Modifier) {
     var spacerModifier = modifier
 
     if (viewContent.has(keyName = "minLength")) {
-        val minLength = viewContent.getDouble(keyName = "minLength").toFloat()
+        val minLength = viewContent.appstentResolvedDouble(keyName = "minLength").toFloat()
         spacerModifier = modifier.defaultMinSize(Dp(minLength), Dp(minLength))
     }
 
@@ -322,7 +322,7 @@ fun GradientView(
     val gradientModifier = modifier.getModifier(viewContent, context, customContentDataProvider)
 
     val heightModifier = if (viewContent.has(keyName = "height")) {
-        val viewHeight = viewContent.getInt(keyName = "height")
+        val viewHeight = viewContent.appstentResolvedDouble(keyName = "height")
 
         gradientModifier.height(viewHeight.dp)
     } else {
@@ -364,7 +364,7 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customConte
 
     var textStyle = TextStyle.Default
     if (viewContent.has(keyName = "font")) {
-        val fontString = viewContent.getString(keyName = "font")
+        val fontString = viewContent.appstentResolvedString(keyName = "font")
         textStyle = when (fontString) {
             "largeTitle" -> MaterialTheme.typography.h3
             "title" -> MaterialTheme.typography.h4
@@ -683,7 +683,7 @@ fun ProgressView(
 ) {
     val context = LocalContext.current
     val label = viewContent.optString(keyName = "label", fallback = "")
-    val total = viewContent.optDouble(keyName = "total", fallback = 100.0).takeIf { it > 0.0 } ?: 100.0
+    val total = viewContent.appstentResolvedDouble(keyName = "total", fallback = 100.0).takeIf { it > 0.0 } ?: 100.0
     val progress = resolveProgressValue(viewContent, customContentDataProvider)
     val progressFraction = (progress / total).toFloat().coerceIn(0f, 1f)
     val progressType = viewContent.optString(keyName = "progressType", fallback = "linear")
@@ -750,7 +750,7 @@ private fun resolveProgressValue(
             ?: 0.0
     }
 
-    return viewContent.optDouble(keyName = "progress", fallback = 0.0)
+    return viewContent.appstentResolvedDouble(keyName = "progress", fallback = 0.0)
 }
 
 private fun resolveProgressValueLabel(
@@ -1255,8 +1255,8 @@ fun GridView(
 
     val views = viewContent.getJSONArray(keyName = "views")
 
-    val rowSpacing = viewContent.optInt(keyName = "rowSpacing", 0)
-    val colSpacing = viewContent.optInt(keyName = "colSpacing", 0)
+    val rowSpacing = viewContent.appstentResolvedDouble(keyName = "rowSpacing", fallback = 0.0)
+    val colSpacing = viewContent.appstentResolvedDouble(keyName = "colSpacing", fallback = 0.0)
 
     val gridCells: GridCells = getGridCells(viewContent)
 
@@ -1291,11 +1291,15 @@ private fun getGridCells(viewContent: JSONObject): GridCells {
 
     return if (viewContent.has(keyName = "minCellWidth")) {
 
-        GridCells.Adaptive(viewContent.getInt(keyName = "minCellWidth").dp)
+        GridCells.Adaptive(viewContent.appstentResolvedDouble(keyName = "minCellWidth").dp)
 
     } else if (viewContent.has(keyName = "numColumns") || viewContent.has(keyName = "numRows") ) {
 
-        val rowColCount = viewContent.optInt(keyName = "numColumns", viewContent.optInt(keyName = "numRows", 1))
+        val rowColCount = if (viewContent.has(keyName = "numColumns")) {
+            viewContent.appstentResolvedInt(keyName = "numColumns", fallback = 1)
+        } else {
+            viewContent.appstentResolvedInt(keyName = "numRows", fallback = 1)
+        }
 
         GridCells.Fixed(rowColCount)
     }
@@ -1320,7 +1324,7 @@ private fun getGridCells(viewContent: JSONObject): GridCells {
 
                     val rowColConfig = gridRowColConfigs.getJSONObject(it)
                     if (rowColConfig.getString(keyName = "itemType") == "fixed") {
-                        totalFixedSize += (rowColConfig.getInt(keyName = "width") * density).toInt()
+                        totalFixedSize += (rowColConfig.appstentResolvedDouble(keyName = "width") * density).toInt()
                     } else {
                         totalFlexibleItems += 1
                     }
@@ -1332,7 +1336,7 @@ private fun getGridCells(viewContent: JSONObject): GridCells {
 
                     val size = if (rowColConfig.getString(keyName = "itemType") == "fixed") {
 
-                        (rowColConfig.getInt(keyName = "width") * density).toInt()
+                        (rowColConfig.appstentResolvedDouble(keyName = "width") * density).toInt()
                     } else {
                         ((availableSize - spacing) - totalFixedSize) / totalFlexibleItems
                     }

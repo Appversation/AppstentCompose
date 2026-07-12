@@ -1252,6 +1252,7 @@ fun GridView(
     customContentDataProvider: CustomContentDataProvider? = null,
     actionHandlerProvider: ActionHandlerProvider? = null
 ) {
+    val context = LocalContext.current
 
     val views = viewContent.getJSONArray(keyName = "views")
 
@@ -1261,12 +1262,11 @@ fun GridView(
     val gridCells: GridCells = getGridCells(viewContent)
 
     val gridType = viewContent.optString(keyName = "gridType", "vertical")
+    val gridModifier = modifier.getModifier(viewContent, context, customContentDataProvider)
 
     if (gridType == "horizontal") {
-        val gridModifier: Modifier = modifier.verticalScroll(rememberScrollState())
-
         LazyHorizontalGrid(rows = gridCells,
-            modifier = modifier,
+            modifier = gridModifier,
             horizontalArrangement = Arrangement.spacedBy(colSpacing.dp),
             verticalArrangement = Arrangement.spacedBy(rowSpacing.dp)) {
 
@@ -1276,7 +1276,7 @@ fun GridView(
         }
     } else {
         LazyVerticalGrid(columns = gridCells,
-            modifier = modifier,
+            modifier = gridModifier,
             horizontalArrangement = Arrangement.spacedBy(colSpacing.dp),
             verticalArrangement = Arrangement.spacedBy(rowSpacing.dp)) {
 

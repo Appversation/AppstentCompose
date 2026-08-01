@@ -1,0 +1,24 @@
+{
+  "type": "hStack",
+  "spacing": 12,
+  "views": [
+    {
+      "type": "image",
+      "sourceType": "system",
+      "source": "photo",
+      "scalingMode": "scaledToFit",
+      "width": 140,
+      "height": 140,
+      "backgroundColor": "#E8EEF9"
+    },
+    {
+      "type": "image",
+      "sourceType": "system",
+      "source": "photo",
+      "scalingMode": "scaledToFill",
+      "width": 140,
+      "height": 140,
+      "backgroundColor": "#FADBD8"
+    }
+  ]
+}

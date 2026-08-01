@@ -1,0 +1,8 @@
+{
+  "type": "text",
+  "text": "Half width, quarter height",
+  "text_alignment": "center",
+  "percent_width": 0.5,
+  "percent_height": 0.25,
+  "backgroundColor": "#FCF3CF"
+}

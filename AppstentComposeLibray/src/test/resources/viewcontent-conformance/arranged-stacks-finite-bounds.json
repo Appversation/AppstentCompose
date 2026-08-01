@@ -1,0 +1,36 @@
+{
+  "type": "vStack",
+  "spacing": 16,
+  "views": [
+    {
+      "type": "hStack",
+      "arrangement": "spaceBetween",
+      "width": 300,
+      "views": [
+        {
+          "type": "text",
+          "text": "Leading"
+        },
+        {
+          "type": "text",
+          "text": "Trailing"
+        }
+      ]
+    },
+    {
+      "type": "vStack",
+      "arrangement": "spaceBetween",
+      "height": 160,
+      "views": [
+        {
+          "type": "text",
+          "text": "Top"
+        },
+        {
+          "type": "text",
+          "text": "Bottom"
+        }
+      ]
+    }
+  ]
+}

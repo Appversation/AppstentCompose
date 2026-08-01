@@ -1,0 +1,206 @@
+package com.appstentcompose.example
+
+import android.os.Bundle
+import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
+import com.appversation.appstentcompose.AppstentView
+import com.appversation.appstentcompose.ModuleConfigs.ActionHandlerProvider
+import org.json.JSONObject
+
+class SchemaParityPreviewActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            SchemaParityAuditPreview()
+        }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 393, heightDp = 852)
+@Composable
+private fun SchemaParityAuditPreview() {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = Color.White
+    ) {
+        AppstentView(
+            viewContent = JSONObject(SCHEMA_PARITY_FIXTURE),
+            modifier = Modifier.fillMaxSize(),
+            actionHandlerProvider = object : ActionHandlerProvider {
+                override fun handleTap(handlerName: String, data: JSONObject?) {
+                    Log.i("SchemaParityPreview", "Handled action: $handlerName")
+                }
+            }
+        )
+    }
+}
+
+private const val SCHEMA_PARITY_FIXTURE = """
+{
+  "type": "vStack",
+  "alignment": "leading",
+  "spacing": 14,
+  "scrollable": true,
+  "fillMaxWidth": true,
+  "padding": 16,
+  "backgroundColor": "#F6F7FB",
+  "views": [
+    {
+      "type": "text",
+      "text": "Appstent schema parity",
+      "font": "title2",
+      "textEmphasis": ["bold"],
+      "foregroundColor": "#17202A"
+    },
+    {
+      "type": "text",
+      "text": "One descriptor rendered by SwiftUI and Jetpack Compose",
+      "font": "caption",
+      "foregroundColor": "#566573"
+    },
+    {
+      "type": "text",
+      "text": "text_alignment: center",
+      "text_alignment": "center",
+      "width": 340,
+      "height": 44,
+      "backgroundColor": "#E8EEF9",
+      "cornerRadius": 6
+    },
+    {
+      "type": "gradientView",
+      "gradientType": "linear",
+      "colors": ["#2057B5", "#55C2B7"],
+      "startPoint": "leading",
+      "endPoint": "trailing",
+      "fillMaxWidth": true,
+      "height": 54,
+      "cornerRadius": 6
+    },
+    {
+      "type": "text",
+      "text": "Overlay support",
+      "text_alignment": "center",
+      "alignment": "topTrailing",
+      "width": 340,
+      "height": 58,
+      "backgroundColor": "#DCE7FF",
+      "cornerRadius": 6,
+      "overlay_view": {
+        "type": "text",
+        "text": "NEW",
+        "font": "caption2",
+        "foregroundColor": "#FFFFFF",
+        "backgroundColor": "#C0392B",
+        "padding": 4,
+        "cornerRadius": 4
+      }
+    },
+    {
+      "type": "hStack",
+      "alignment": "center",
+      "spacing": 12,
+      "views": [
+        {
+          "type": "text",
+          "text": "One",
+          "text_alignment": "center",
+          "alignment": "center",
+          "width": 70,
+          "height": 34,
+          "backgroundColor": "#FADBD8",
+          "cornerRadius": 6
+        },
+        {
+          "type": "text",
+          "text": "Two",
+          "text_alignment": "center",
+          "alignment": "center",
+          "width": 70,
+          "height": 34,
+          "backgroundColor": "#FCF3CF",
+          "cornerRadius": 6
+        },
+        {
+          "type": "text",
+          "text": "Three",
+          "text_alignment": "center",
+          "alignment": "center",
+          "width": 70,
+          "height": 34,
+          "backgroundColor": "#D5F5E3",
+          "cornerRadius": 6
+        }
+      ]
+    },
+    {
+      "type": "progressView",
+      "label": "Upload progress",
+      "currentValueLabel": "42%",
+      "progress": 42,
+      "total": 100,
+      "progressType": "linear",
+      "progressTintColor": "#0A84AF",
+      "labelColor": "#17202A",
+      "valueLabelColor": "#566573",
+      "fillMaxWidth": true,
+      "padding": 8,
+      "backgroundColor": "#FFFFFF",
+      "cornerRadius": 6
+    },
+    {
+      "type": "disclosureGroup",
+      "isExpanded": true,
+      "fillMaxWidth": true,
+      "padding": 8,
+      "backgroundColor": "#FFFFFF",
+      "cornerRadius": 6,
+      "label": [
+        {
+          "type": "text",
+          "text": "Disclosure details",
+          "font": "headline"
+        }
+      ],
+      "content": [
+        {
+          "type": "text",
+          "text": "Expanded from the shared schema descriptor.",
+          "font": "caption",
+          "foregroundColor": "#566573"
+        }
+      ]
+    },
+    {
+      "type": "link",
+      "text": "Open documentation",
+      "url": "https://example.com",
+      "foregroundColor": "#2057B5",
+      "textEmphasis": ["underline"]
+    },
+    {
+      "type": "menu",
+      "title": "Options",
+      "views": [
+        {
+          "type": "text",
+          "text": "First action",
+          "tapHandlerName": "firstAction"
+        },
+        {
+          "type": "text",
+          "text": "Second action",
+          "tapHandlerName": "secondAction"
+        }
+      ]
+    }
+  ]
+}
+"""

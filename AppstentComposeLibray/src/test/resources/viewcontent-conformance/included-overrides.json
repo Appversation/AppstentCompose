@@ -1,0 +1,8 @@
+{
+  "type": "included",
+  "source": "conformance/included-base",
+  "text": "Wrapper override",
+  "foregroundColor": "#C0392B",
+  "padding": 12,
+  "tapHandlerName": "includedAction"
+}

@@ -1,0 +1,35 @@
+{
+  "type": "grid",
+  "gridType": "vertical",
+  "numColumns": 2,
+  "width": 320,
+  "height": 240,
+  "rowSpacing": 12,
+  "colSpacing": 12,
+  "views": [
+    {
+      "type": "text",
+      "text": "One",
+      "height": 56,
+      "backgroundColor": "#FADBD8"
+    },
+    {
+      "type": "text",
+      "text": "Two",
+      "height": 56,
+      "backgroundColor": "#FCF3CF"
+    },
+    {
+      "type": "text",
+      "text": "Three",
+      "height": 56,
+      "backgroundColor": "#D5F5E3"
+    },
+    {
+      "type": "text",
+      "text": "Four",
+      "height": 56,
+      "backgroundColor": "#D6EAF8"
+    }
+  ]
+}

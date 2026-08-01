@@ -1,0 +1,51 @@
+{
+  "contractVersion": "0.1.0",
+  "sdkVersions": {
+    "AppstentUI@1.0": {
+      "platform": "ios",
+      "capabilities": {
+        "schema-parity": "known-gap",
+        "frame-background-order": "known-gap",
+        "text-alignment": "conformant",
+        "stack-spacing": "conformant",
+        "relative-sizing": "conformant",
+        "image-unframed-fit": "conformant",
+        "image-bounded-fit-fill": "conformant",
+        "intrinsic-stacks": "conformant",
+        "arranged-stacks-finite-bounds": "conformant",
+        "z-stack-child-sizing": "conformant",
+        "bounded-vertical-grid": "conformant",
+        "bounded-horizontal-grid": "known-gap",
+        "list-viewport-sizing": "conformant",
+        "tap-propagation": "not-automated",
+        "included-overrides": "known-gap",
+        "media-flags": "conformant",
+        "tabs": "conformant",
+        "navigation": "conformant"
+      }
+    },
+    "AppstentCompose@1.7.1": {
+      "platform": "android",
+      "capabilities": {
+        "schema-parity": "known-gap",
+        "frame-background-order": "conformant",
+        "text-alignment": "known-gap",
+        "stack-spacing": "known-gap",
+        "relative-sizing": "known-gap",
+        "image-unframed-fit": "conformant",
+        "image-bounded-fit-fill": "conformant",
+        "intrinsic-stacks": "known-gap",
+        "arranged-stacks-finite-bounds": "known-gap",
+        "z-stack-child-sizing": "known-gap",
+        "bounded-vertical-grid": "not-automated",
+        "bounded-horizontal-grid": "not-automated",
+        "list-viewport-sizing": "known-gap",
+        "tap-propagation": "not-automated",
+        "included-overrides": "known-gap",
+        "media-flags": "known-gap",
+        "tabs": "known-gap",
+        "navigation": "known-gap"
+      }
+    }
+  }
+}

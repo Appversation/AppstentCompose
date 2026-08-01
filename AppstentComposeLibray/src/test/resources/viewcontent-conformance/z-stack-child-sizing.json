@@ -1,0 +1,21 @@
+{
+  "type": "zStack",
+  "alignment": "bottomTrailing",
+  "views": [
+    {
+      "type": "text",
+      "text": "Background",
+      "width": 240,
+      "height": 120,
+      "backgroundColor": "#DCE7FF"
+    },
+    {
+      "type": "text",
+      "text": "Badge",
+      "padding": 6,
+      "backgroundColor": "#C0392B",
+      "foregroundColor": "#FFFFFF",
+      "cornerRadius": 4
+    }
+  ]
+}

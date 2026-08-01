@@ -1,0 +1,22 @@
+{
+  "type": "vStack",
+  "alignment": "leading",
+  "spacing": 16,
+  "views": [
+    {
+      "type": "text",
+      "text": "First",
+      "backgroundColor": "#FADBD8"
+    },
+    {
+      "type": "text",
+      "text": "Second",
+      "backgroundColor": "#D5F5E3"
+    },
+    {
+      "type": "text",
+      "text": "Third",
+      "backgroundColor": "#D6EAF8"
+    }
+  ]
+}

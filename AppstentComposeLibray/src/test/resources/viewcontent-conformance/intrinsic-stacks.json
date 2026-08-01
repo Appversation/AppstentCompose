@@ -1,0 +1,35 @@
+{
+  "type": "vStack",
+  "alignment": "leading",
+  "spacing": 12,
+  "views": [
+    {
+      "type": "hStack",
+      "spacing": 8,
+      "views": [
+        {
+          "type": "text",
+          "text": "Short"
+        },
+        {
+          "type": "text",
+          "text": "Row"
+        }
+      ]
+    },
+    {
+      "type": "vStack",
+      "spacing": 6,
+      "views": [
+        {
+          "type": "text",
+          "text": "Content"
+        },
+        {
+          "type": "text",
+          "text": "Sized"
+        }
+      ]
+    }
+  ]
+}

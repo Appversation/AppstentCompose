@@ -1,0 +1,22 @@
+{
+  "type": "vStack",
+  "spacing": 12,
+  "tapHandlerName": "parentAction",
+  "tapHandlerData": {
+    "origin": "parent"
+  },
+  "views": [
+    {
+      "type": "text",
+      "text": "Parent action"
+    },
+    {
+      "type": "text",
+      "text": "Child action",
+      "tapHandlerName": "childAction",
+      "tapHandlerData": {
+        "origin": "child"
+      }
+    }
+  ]
+}

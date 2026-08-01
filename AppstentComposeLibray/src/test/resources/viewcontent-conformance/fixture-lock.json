@@ -1,0 +1,30 @@
+{
+  "contractVersion": "0.1.0",
+  "algorithm": "sha256",
+  "schema": {
+    "file": "Shared/ViewContent.schema.json",
+    "sha256": "6eb7c3f908e32ef12ce44303c999eefb06cfd2e7dfcf69e37b2d94c148165dd8"
+  },
+  "files": {
+    "arranged-stacks-finite-bounds.json": "55263e03aca16cbcc7c432d442349416e031041a75dc90fbd0507d2d76b97117",
+    "bounded-horizontal-grid.json": "a769e0b653a939c0752ab90b47e3f117f9c5d1450cf38bd6eb8084bcc5688e69",
+    "bounded-vertical-grid.json": "5ddc6dc9212fec5f8b621f69b7e0b6405b98bfe1fd50b388cbfa9f90cb1d85b2",
+    "capability-matrix.json": "6149169c42737f51b03e9b0c8f6f67b0c7cce6a157a459fd32df2caef38bc192",
+    "frame-background-order.json": "52d2b1232331807a9e51eebb115e16ccfa2d4666586aab753160907df188e36b",
+    "image-bounded-fit-fill.json": "7e58e0627e50097b11f4ad96b4a38405135dfdf0f5443a9926537e7f9f6b828b",
+    "image-unframed-fit.json": "859e209eccd08223bf106019c8a2389eaf733a6775b847cf9fa53cecc74f821c",
+    "included-overrides.json": "6baaa14d16e085bdeba1a8ad2c68dbb17a786f31f319c647cf8167c1b17070e4",
+    "intrinsic-stacks.json": "9c86622824f263794ea9f9c0f009619098c877bbce8113e41bc36cc18032cdca",
+    "list-viewport-sizing.json": "69ab61267b6bec01280a2c693c5b6654bc7ea2a5452eca07b05ef9406ab7ca71",
+    "manifest.json": "9fa5bdce1e5e48da0c594c506f6cfc74fd36df7e6ddead299027ae9f96e24e53",
+    "media-flags.json": "aae5f9da12ce75888b7b8f446006e6d4a6f214e79febcaf20705aa0127c4e527",
+    "navigation.json": "11079b6d77b7699ff6d059c18a4c3c7dc9d67f6fc0a8873593ca711effb71642",
+    "relative-sizing.json": "86c18e9f2eb9bbfed838106a7fcc28426e5ccf51785e71c820504f848ebaedd6",
+    "schema-parity.json": "1bc6de91e0d335d33345dee8399e41203c29a3b2cdf3bfd66ba206044c5e9cb6",
+    "stack-spacing.json": "825f8dbd8a92713461193ff35c7480911588429b83e61dca24a3d7e39dc9b0d1",
+    "tabs.json": "c497d5a9bf4843279b13b17543f972ff54b2aeccb9dc032c616344737ce3183a",
+    "tap-propagation.json": "cc7777abb4cbe8e2683cdb913f679722b8d5aa3dfe4b685558a34723f3f60997",
+    "text-alignment.json": "9e7f1a85d87183ab7a8ec887804ea022ab20bb4f947920581e300a870e2ef485",
+    "z-stack-child-sizing.json": "3fbdfea46f39c8aaf016fd8f50237b09edb9abbbd5f5868a3fd4a9f1db421595"
+  }
+}

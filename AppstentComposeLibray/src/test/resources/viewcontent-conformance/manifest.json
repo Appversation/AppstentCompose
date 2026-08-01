@@ -1,0 +1,224 @@
+{
+  "contractVersion": "0.1.0",
+  "defaultViewport": {
+    "width": 390,
+    "height": 844
+  },
+  "fixtures": [
+    {
+      "id": "schema-parity",
+      "file": "schema-parity.json",
+      "concern": "canonical parity smoke test",
+      "baselinePolicy": "platform",
+      "nativeDifference": "Link, menu, disclosure, and progress use native controls.",
+      "assertions": [
+        { "path": "/type", "equals": "vStack" },
+        { "path": "/spacing", "equals": 14 },
+        { "path": "/views/2/text_alignment", "equals": "center" },
+        { "path": "/views/4/overlay_view/type", "equals": "text" }
+      ]
+    },
+    {
+      "id": "frame-background-order",
+      "file": "frame-background-order.json",
+      "concern": "frame and background modifier order",
+      "baselinePolicy": "shared",
+      "assertions": [
+        { "path": "/type", "equals": "text" },
+        { "path": "/width", "equals": 280 },
+        { "path": "/height", "equals": 72 },
+        { "path": "/backgroundColor", "equals": "#DCE7FF" }
+      ]
+    },
+    {
+      "id": "text-alignment",
+      "file": "text-alignment.json",
+      "concern": "text alignment inside finite bounds",
+      "baselinePolicy": "shared",
+      "assertions": [
+        { "path": "/text_alignment", "equals": "center" },
+        { "path": "/width", "equals": 280 }
+      ]
+    },
+    {
+      "id": "stack-spacing",
+      "file": "stack-spacing.json",
+      "concern": "stack spacing",
+      "baselinePolicy": "shared",
+      "assertions": [
+        { "path": "/type", "equals": "vStack" },
+        { "path": "/spacing", "equals": 16 },
+        { "path": "/views", "length": 3 }
+      ]
+    },
+    {
+      "id": "relative-sizing",
+      "file": "relative-sizing.json",
+      "concern": "relative width and height",
+      "baselinePolicy": "shared",
+      "assertions": [
+        { "path": "/percent_width", "equals": 0.5 },
+        { "path": "/percent_height", "equals": 0.25 }
+      ]
+    },
+    {
+      "id": "image-unframed-fit",
+      "file": "image-unframed-fit.json",
+      "concern": "unframed image fit",
+      "baselinePolicy": "platform",
+      "nativeDifference": "System image glyphs and interpolation are platform-native.",
+      "assertions": [
+        { "path": "/type", "equals": "image" },
+        { "path": "/scalingMode", "equals": "scaledToFit" },
+        { "path": "/width", "absent": true },
+        { "path": "/height", "absent": true }
+      ]
+    },
+    {
+      "id": "image-bounded-fit-fill",
+      "file": "image-bounded-fit-fill.json",
+      "concern": "bounded image fit and fill",
+      "baselinePolicy": "platform",
+      "nativeDifference": "System image glyphs and interpolation are platform-native.",
+      "assertions": [
+        { "path": "/views", "length": 2 },
+        { "path": "/views/0/scalingMode", "equals": "scaledToFit" },
+        { "path": "/views/1/scalingMode", "equals": "scaledToFill" },
+        { "path": "/views/1/width", "equals": 140 },
+        { "path": "/views/1/height", "equals": 140 }
+      ]
+    },
+    {
+      "id": "intrinsic-stacks",
+      "file": "intrinsic-stacks.json",
+      "concern": "intrinsic stack sizing",
+      "baselinePolicy": "shared",
+      "assertions": [
+        { "path": "/views/0/type", "equals": "hStack" },
+        { "path": "/views/0/arrangement", "absent": true },
+        { "path": "/views/1/type", "equals": "vStack" },
+        { "path": "/views/1/width", "absent": true }
+      ]
+    },
+    {
+      "id": "arranged-stacks-finite-bounds",
+      "file": "arranged-stacks-finite-bounds.json",
+      "concern": "arranged stacks in finite bounds",
+      "baselinePolicy": "shared",
+      "assertions": [
+        { "path": "/views/0/arrangement", "equals": "spaceBetween" },
+        { "path": "/views/0/width", "equals": 300 },
+        { "path": "/views/1/arrangement", "equals": "spaceBetween" },
+        { "path": "/views/1/height", "equals": 160 }
+      ]
+    },
+    {
+      "id": "z-stack-child-sizing",
+      "file": "z-stack-child-sizing.json",
+      "concern": "z-stack independent child sizing",
+      "baselinePolicy": "shared",
+      "assertions": [
+        { "path": "/type", "equals": "zStack" },
+        { "path": "/views/0/width", "equals": 240 },
+        { "path": "/views/1/width", "absent": true }
+      ]
+    },
+    {
+      "id": "bounded-vertical-grid",
+      "file": "bounded-vertical-grid.json",
+      "concern": "bounded vertical grid viewport",
+      "baselinePolicy": "shared",
+      "assertions": [
+        { "path": "/gridType", "equals": "vertical" },
+        { "path": "/numColumns", "equals": 2 },
+        { "path": "/width", "equals": 320 },
+        { "path": "/height", "equals": 240 }
+      ]
+    },
+    {
+      "id": "bounded-horizontal-grid",
+      "file": "bounded-horizontal-grid.json",
+      "concern": "bounded horizontal grid viewport",
+      "baselinePolicy": "shared",
+      "assertions": [
+        { "path": "/gridType", "equals": "horizontal" },
+        { "path": "/numRows", "equals": 2 },
+        { "path": "/width", "equals": 320 },
+        { "path": "/height", "equals": 180 }
+      ]
+    },
+    {
+      "id": "list-viewport-sizing",
+      "file": "list-viewport-sizing.json",
+      "concern": "list viewport sizing",
+      "baselinePolicy": "platform",
+      "nativeDifference": "List rows, separators, and section headers use native controls.",
+      "assertions": [
+        { "path": "/type", "equals": "list" },
+        { "path": "/width", "equals": 320 },
+        { "path": "/height", "equals": 240 },
+        { "path": "/sections/0/views", "length": 3 }
+      ]
+    },
+    {
+      "id": "tap-propagation",
+      "file": "tap-propagation.json",
+      "concern": "tap propagation",
+      "baselinePolicy": "structural-only",
+      "assertions": [
+        { "path": "/tapHandlerName", "equals": "parentAction" },
+        { "path": "/views/1/tapHandlerName", "equals": "childAction" },
+        { "path": "/views/1/tapHandlerData/origin", "equals": "child" }
+      ]
+    },
+    {
+      "id": "included-overrides",
+      "file": "included-overrides.json",
+      "concern": "included content override precedence",
+      "baselinePolicy": "structural-only",
+      "assertions": [
+        { "path": "/type", "equals": "included" },
+        { "path": "/source", "equals": "conformance/included-base" },
+        { "path": "/text", "equals": "Wrapper override" },
+        { "path": "/padding", "equals": 12 }
+      ]
+    },
+    {
+      "id": "media-flags",
+      "file": "media-flags.json",
+      "concern": "media playback flags",
+      "baselinePolicy": "structural-only",
+      "assertions": [
+        { "path": "/autoplay", "equals": false },
+        { "path": "/isMuted", "equals": true },
+        { "path": "/autoLoop", "equals": true },
+        { "path": "/showPlaybackControls", "equals": false }
+      ]
+    },
+    {
+      "id": "tabs",
+      "file": "tabs.json",
+      "concern": "tab paging options",
+      "baselinePolicy": "platform",
+      "nativeDifference": "Tab and page indicators use native controls.",
+      "assertions": [
+        { "path": "/pagerAxis", "equals": "horizontal" },
+        { "path": "/pageIndexMode", "equals": "hide" },
+        { "path": "/tabs", "length": 2 }
+      ]
+    },
+    {
+      "id": "navigation",
+      "file": "navigation.json",
+      "concern": "navigation host and toolbar",
+      "baselinePolicy": "platform",
+      "nativeDifference": "Navigation bars, toolbar placement, and link chrome use native controls.",
+      "assertions": [
+        { "path": "/barTitle", "equals": "Conformance" },
+        { "path": "/isBarHidden", "equals": false },
+        { "path": "/toolbarViews", "length": 1 },
+        { "path": "/views/0/route", "equals": "details" }
+      ]
+    }
+  ]
+}

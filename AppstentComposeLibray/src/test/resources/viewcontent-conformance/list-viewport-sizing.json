@@ -1,0 +1,25 @@
+{
+  "type": "list",
+  "listStyle": "plainListStyle",
+  "width": 320,
+  "height": 240,
+  "sections": [
+    {
+      "title": "Section",
+      "views": [
+        {
+          "type": "text",
+          "text": "First row"
+        },
+        {
+          "type": "text",
+          "text": "Second row"
+        },
+        {
+          "type": "text",
+          "text": "Third row"
+        }
+      ]
+    }
+  ]
+}

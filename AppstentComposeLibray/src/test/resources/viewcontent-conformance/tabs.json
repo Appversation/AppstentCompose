@@ -1,0 +1,25 @@
+{
+  "type": "tabbedView",
+  "tabStyle": "pageStyle",
+  "pagerAxis": "horizontal",
+  "pageIndexMode": "hide",
+  "autorotate": false,
+  "width": 320,
+  "height": 240,
+  "tabs": [
+    {
+      "title": "First",
+      "tabContent": {
+        "type": "text",
+        "text": "First page"
+      }
+    },
+    {
+      "title": "Second",
+      "tabContent": {
+        "type": "text",
+        "text": "Second page"
+      }
+    }
+  ]
+}

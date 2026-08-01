@@ -1,0 +1,25 @@
+{
+  "type": "navigationView",
+  "barTitle": "Conformance",
+  "isBarHidden": false,
+  "width": 320,
+  "height": 320,
+  "toolbarViews": [
+    {
+      "type": "text",
+      "text": "Toolbar",
+      "tapHandlerName": "toolbarAction"
+    }
+  ],
+  "views": [
+    {
+      "type": "navigationLink",
+      "route": "details",
+      "routeType": "standard",
+      "triggerView": {
+        "type": "text",
+        "text": "Open details"
+      }
+    }
+  ]
+}

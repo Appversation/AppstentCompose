@@ -1,0 +1,12 @@
+{
+  "type": "video",
+  "sourceType": "remote",
+  "source": "https://example.com/conformance.mp4",
+  "autoplay": false,
+  "isMuted": true,
+  "autoLoop": true,
+  "showPlaybackControls": false,
+  "scalingMode": "scaledToFit",
+  "width": 320,
+  "height": 180
+}

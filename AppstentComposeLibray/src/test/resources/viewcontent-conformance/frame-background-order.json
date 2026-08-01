@@ -1,0 +1,9 @@
+{
+  "type": "text",
+  "text": "Frame owns its background",
+  "text_alignment": "center",
+  "width": 280,
+  "height": 72,
+  "backgroundColor": "#DCE7FF",
+  "cornerRadius": 10
+}

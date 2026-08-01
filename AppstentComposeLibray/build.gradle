@@ -16,6 +16,7 @@ plugins {
     // The following line is not strictly necessary but helps with JitPack compatibility
     id 'kotlin-android'
     id 'org.jetbrains.kotlin.plugin.compose'
+    id 'com.android.compose.screenshot'
 }
 
 android {
@@ -74,6 +75,10 @@ android {
     }
     testOptions {
         targetSdk 36
+    }
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
+    sourceSets {
+        screenshotTest.assets.srcDir 'src/test/resources'
     }
 }
 
@@ -198,4 +203,6 @@ dependencies {
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_ui_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_ui_version"
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_ui_version"
+    screenshotTestImplementation 'com.android.tools.screenshot:screenshot-validation-api:0.0.1-alpha15'
+    screenshotTestImplementation "androidx.compose.ui:ui-tooling:$compose_ui_version"
 }

@@ -1,0 +1,28 @@
+{
+  "type": "grid",
+  "gridType": "vertical",
+  "width": 320,
+  "height": 240,
+  "colSpacing": 8,
+  "columns": [
+    {
+      "itemType": "fixed",
+      "width": 72
+    },
+    {
+      "itemType": "flexible",
+      "minWidth": 80,
+      "maxWidth": 120
+    },
+    {
+      "itemType": "adaptive",
+      "minWidth": 64,
+      "maxWidth": 96
+    }
+  ],
+  "views": [
+    { "type": "text", "text": "Fixed" },
+    { "type": "text", "text": "Flexible" },
+    { "type": "text", "text": "Adaptive" }
+  ]
+}

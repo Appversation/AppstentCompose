@@ -173,6 +173,34 @@
       ]
     },
     {
+      "id": "grid-item-bounds",
+      "file": "grid-item-bounds.json",
+      "concern": "fixed, flexible, and adaptive grid item bounds",
+      "baselinePolicy": "structural-only",
+      "assertions": [
+        { "path": "/columns/0/itemType", "equals": "fixed" },
+        { "path": "/columns/0/width", "equals": 72 },
+        { "path": "/columns/1/minWidth", "equals": 80 },
+        { "path": "/columns/1/maxWidth", "equals": 120 },
+        { "path": "/columns/2/itemType", "equals": "adaptive" },
+        { "path": "/columns/2/minWidth", "equals": 64 },
+        { "path": "/columns/2/maxWidth", "equals": 96 }
+      ]
+    },
+    {
+      "id": "list-styles",
+      "file": "list-styles.json",
+      "concern": "semantic native list style selection",
+      "baselinePolicy": "structural-only",
+      "assertions": [
+        { "path": "/views/0/listStyle", "equals": "plainListStyle" },
+        { "path": "/views/1/listStyle", "equals": "sidebarListStyle" },
+        { "path": "/views/2/listStyle", "equals": "insetListStyle" },
+        { "path": "/views/3/listStyle", "equals": "groupedListStyle" },
+        { "path": "/views/4/listStyle", "equals": "insetGroupedListStyle" }
+      ]
+    },
+    {
       "id": "tap-propagation",
       "file": "tap-propagation.json",
       "concern": "tap propagation",

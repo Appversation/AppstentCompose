@@ -1,0 +1,10 @@
+{
+  "type": "vStack",
+  "views": [
+    { "type": "list", "listStyle": "plainListStyle", "views": [] },
+    { "type": "list", "listStyle": "sidebarListStyle", "views": [] },
+    { "type": "list", "listStyle": "insetListStyle", "views": [] },
+    { "type": "list", "listStyle": "groupedListStyle", "views": [] },
+    { "type": "list", "listStyle": "insetGroupedListStyle", "views": [] }
+  ]
+}

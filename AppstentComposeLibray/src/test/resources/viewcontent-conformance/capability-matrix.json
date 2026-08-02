@@ -18,6 +18,8 @@
         "bounded-vertical-grid": "conformant",
         "bounded-horizontal-grid": "conformant",
         "list-viewport-sizing": "conformant",
+        "grid-item-bounds": "conformant",
+        "list-styles": "conformant",
         "tap-propagation": "not-automated",
         "included-overrides": "conformant",
         "media-flags": "conformant",
@@ -42,11 +44,13 @@
         "bounded-vertical-grid": "conformant",
         "bounded-horizontal-grid": "conformant",
         "list-viewport-sizing": "conformant",
+        "grid-item-bounds": "conformant",
+        "list-styles": "conformant",
         "tap-propagation": "not-automated",
         "included-overrides": "conformant",
-        "media-flags": "known-gap",
-        "tabs": "known-gap",
-        "navigation": "known-gap"
+        "media-flags": "conformant",
+        "tabs": "conformant",
+        "navigation": "conformant"
       }
     }
   }

@@ -27,9 +27,12 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.LinearProgressIndicator
+import androidx.compose.material.LocalContentAlpha
+import androidx.compose.material.LocalContentColor
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
+import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.Divider
@@ -40,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -47,6 +51,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -76,6 +82,8 @@ import com.appversation.appstentcompose.ModuleConfigs.CustomContentDataProvider
 import com.appversation.appstentcompose.ui.theme.AppstentTheme
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.PagerScope
+import com.google.accompanist.pager.VerticalPager
 import com.google.accompanist.pager.rememberPagerState
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.ExoPlayer
@@ -101,8 +109,12 @@ import org.commonmark.node.SoftLineBreak
 import org.commonmark.node.StrongEmphasis
 import org.commonmark.node.Text as MarkdownTextNode
 import org.commonmark.parser.Parser
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.max
+import kotlin.math.min
 
 
 @Composable
@@ -161,7 +173,11 @@ private fun AppstentViewContent(
         "link" -> LinkView(viewContent, modifier, customContentDataProvider)
         "image" -> ImageView(viewContent, modifier, customContentDataProvider)
         "video" -> VideoView(viewContent, modifier, customContentDataProvider)
-        "webView" -> WebView(viewContent = viewContent, modifier = modifier)
+        "webView" -> WebView(
+            viewContent = viewContent,
+            modifier = modifier,
+            customContentDataProvider = customContentDataProvider,
+        )
         "tabbedView" -> {
             val tabStyle = viewContent.optString(keyName = "tabStyle", fallback = "")
             if (tabStyle == "pageStyle") {
@@ -845,9 +861,18 @@ private fun RenderViewContentArray(
 @Composable
 fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier, customContentDataProvider: CustomContentDataProvider? = null) {
     val context = LocalContext.current
-
-    val sourceType = viewContent.optString(keyName = "sourceType", fallback = "")
-    val imageSource = viewContent.getString(keyName = "source")
+    val imageSource = viewContent.optString(keyName = "source", fallback = "")
+    val sourceType = viewContent.optString(keyName = "sourceType", fallback = "local")
+    val dynamicImageSource = if (sourceType == "dynamic" || sourceType == "dynamic_system") {
+        customContentDataProvider?.getStringFor(imageSource)
+    } else {
+        null
+    }
+    val resolvedImageSource = resolveImageSource(
+        viewContent = viewContent,
+        previewMode = ModuleConfigs.inPreviewMode,
+        dynamicImageSource = dynamicImageSource,
+    )
 
     val scalingMode = if (viewContent.optString(keyName = "scalingMode", "") == "scaledToFill") {
         ContentScale.Crop
@@ -861,45 +886,22 @@ fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier, customCont
             if (viewContent.hasExplicitImageSize()) resolvedModifier else resolvedModifier.fillMaxWidth()
         }
 
-    when (sourceType) {
-        "remote"    -> AsyncImage(imageSource, null,
+    when (resolvedImageSource) {
+        is ResolvedImageSource.Remote -> AsyncImage(resolvedImageSource.source, null,
             contentScale = scalingMode,
             modifier = imageModifier
 
         )
-        "system"    -> Icon(
-            name = imageSource,
+        is ResolvedImageSource.System -> Icon(
+            name = resolvedImageSource.name,
             viewContent = viewContent,
             modifier = imageModifier,
             customContentDataProvider = customContentDataProvider,
             applyContentModifier = false,
             fitToContainer = !viewContent.hasExplicitImageSize(),
         )
-        "dynamic"   -> {
-            val customImageSource:String? = customContentDataProvider?.getStringFor(imageSource)
-            if (customImageSource != null) {
-
-                if (customImageSource.contains("http")) {
-                    AsyncImage(
-                        customImageSource,
-                        null,
-                        contentScale = scalingMode,
-                        modifier = imageModifier)
-                } else {
-                    customImageSource.toIntOrNull()?.let { imageId ->
-                        Image(
-                            painter = painterResource(id = imageId),
-                            contentDescription = null,
-                            contentScale = scalingMode,
-                            modifier = imageModifier,
-                        )
-                    }
-                }
-            }
-        }
-
-        else        -> {
-            imageSource.toIntOrNull()?.let { imageId ->
+        is ResolvedImageSource.Local -> {
+            resolveLocalImageResourceId(context, resolvedImageSource.nameOrId)?.let { imageId ->
                 Image(
                     painterResource(id = imageId),
                     null,
@@ -908,7 +910,64 @@ fun ImageView(viewContent: JSONObject, modifier: Modifier = Modifier, customCont
                 )
             }
         }
+        ResolvedImageSource.Empty -> Unit
     }
+}
+
+internal sealed interface ResolvedImageSource {
+    data class Remote(val source: String) : ResolvedImageSource
+    data class System(val name: String) : ResolvedImageSource
+    data class Local(val nameOrId: String) : ResolvedImageSource
+    data object Empty : ResolvedImageSource
+}
+
+internal fun resolveImageSource(
+    viewContent: JSONObject,
+    previewMode: Boolean,
+    dynamicImageSource: String?,
+): ResolvedImageSource {
+    val previewImageSource = viewContent.optString(keyName = "previewImageSource", fallback = "")
+    if (previewMode && previewImageSource.isNotBlank()) {
+        return ResolvedImageSource.Remote(previewImageSource)
+    }
+
+    val imageSource = viewContent.optString(keyName = "source", fallback = "")
+    if (imageSource.isBlank()) return ResolvedImageSource.Empty
+
+    return when (viewContent.optString(keyName = "sourceType", fallback = "local")) {
+        "remote" -> ResolvedImageSource.Remote(imageSource)
+        "system" -> ResolvedImageSource.System(imageSource)
+        "dynamic", "dynamic_system" -> {
+            val resolvedDynamicSource = dynamicImageSource?.takeIf { it.isNotBlank() }
+                ?: return ResolvedImageSource.Empty
+
+            when {
+                viewContent.optString(keyName = "sourceType", fallback = "") == "dynamic_system" -> {
+                    ResolvedImageSource.System(resolvedDynamicSource)
+                }
+                resolvedDynamicSource.isHttpUrl() -> ResolvedImageSource.Remote(resolvedDynamicSource)
+                else -> ResolvedImageSource.Local(resolvedDynamicSource)
+            }
+        }
+        else -> ResolvedImageSource.Local(imageSource)
+    }
+}
+
+private fun String.isHttpUrl(): Boolean =
+    startsWith("https://", ignoreCase = true) || startsWith("http://", ignoreCase = true)
+
+private fun resolveLocalImageResourceId(context: android.content.Context, nameOrId: String): Int? {
+    nameOrId.toIntOrNull()?.takeIf { it != 0 }?.let { return it }
+
+    val normalizedName = nameOrId
+        .substringAfterLast('/')
+        .substringBeforeLast('.')
+    val resourceId = context.resources.getIdentifier(normalizedName, "drawable", context.packageName)
+        .takeIf { it != 0 }
+        ?: context.resources.getIdentifier(normalizedName, "mipmap", context.packageName)
+            .takeIf { it != 0 }
+
+    return resourceId
 }
 
 private fun JSONObject.hasExplicitImageSize(): Boolean = listOf(
@@ -953,7 +1012,16 @@ fun Icon(
     )
 }
 
-private fun iconFromOutlinedPack(rawName: String): ImageVector? {
+internal fun iconFromOutlinedPack(rawName: String): ImageVector? {
+    when (rawName.trim().lowercase(Locale.ROOT)) {
+        "house" -> return Icons.Outlined.Home
+        "qrcode.viewfinder" -> return Icons.Outlined.QrCodeScanner
+        "person.crop.circle.badge.plus" -> return Icons.Outlined.PersonAdd
+        "slider.horizontal.3" -> return Icons.Outlined.Tune
+        "curlybraces.square.fill" -> return Icons.Outlined.Code
+        "chevron.right" -> return Icons.Outlined.ChevronRight
+    }
+
     val normalizedName = rawName
         .split('.', '_', '-')
         .filter { it.isNotBlank() }
@@ -988,12 +1056,10 @@ fun VideoView(
     val context = LocalContext.current
 
     val sourceType = viewContent.optString(keyName = "sourceType", fallback = "remote")
+    val source = viewContent.optString(keyName = "source", fallback = "")
+    if (source.isBlank()) return
 
-    var videoUri = viewContent.getString(keyName = "source")
-
-    if (sourceType == "local") {
-        videoUri = "asset:///$videoUri"
-    }
+    val videoUri = if (sourceType == "local") "asset:///$source" else source
 
     val scalingModeString = viewContent.optString(keyName = "scalingMode", fallback = "")
 
@@ -1009,11 +1075,10 @@ fun VideoView(
         else -> RESIZE_MODE_FIT
     }
 
-    val showPlaybackControls = viewContent.optBoolean(keyName = "showPlaybackControls", fallback = false)
+    val playbackConfig = resolveVideoPlaybackConfig(viewContent)
 
-    val autoLoop = viewContent.optBoolean(keyName = "autoLoop", fallback = false)
-
-    val exoPlayer = ExoPlayer.Builder(LocalContext.current)
+    val exoPlayer = remember(context, videoUri) {
+        ExoPlayer.Builder(context)
         .build()
         .also { exoPlayer ->
             val mediaItem = MediaItem.Builder()
@@ -1021,15 +1086,24 @@ fun VideoView(
                 .build()
             exoPlayer.setMediaItem(mediaItem)
             exoPlayer.prepare()
-            exoPlayer.playWhenReady = true
-            exoPlayer.videoScalingMode = scalingMode
-            exoPlayer.repeatMode = if (autoLoop) { Player.REPEAT_MODE_ONE } else { Player.REPEAT_MODE_OFF }
         }
+    }
 
-    DisposableEffect(
-        AndroidView(factory = {
+    SideEffect {
+        exoPlayer.playWhenReady = playbackConfig.autoplay
+        exoPlayer.volume = if (playbackConfig.isMuted) 0f else 1f
+        exoPlayer.videoScalingMode = scalingMode
+        exoPlayer.repeatMode = if (playbackConfig.autoLoop) {
+            Player.REPEAT_MODE_ONE
+        } else {
+            Player.REPEAT_MODE_OFF
+        }
+    }
+
+    AndroidView(
+        factory = {
             StyledPlayerView(context).apply {
-                useController = showPlaybackControls
+                useController = playbackConfig.showPlaybackControls
                 player = exoPlayer
                 layoutParams =
                     FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
@@ -1038,27 +1112,66 @@ fun VideoView(
                 resizeMode =  playerContentSizeMode
             }
         },
-        modifier = modifier
-            .getModifier(viewContent, context, customContentDataProvider))
-    ) {
+        update = { playerView ->
+            playerView.player = exoPlayer
+            playerView.useController = playbackConfig.showPlaybackControls
+            playerView.resizeMode = playerContentSizeMode
+        },
+        modifier = modifier.getModifier(viewContent, context, customContentDataProvider),
+    )
+
+    DisposableEffect(exoPlayer) {
         onDispose { exoPlayer.release() }
     }
 }
 
+internal data class VideoPlaybackConfig(
+    val autoplay: Boolean,
+    val isMuted: Boolean,
+    val autoLoop: Boolean,
+    val showPlaybackControls: Boolean,
+)
+
+internal fun resolveVideoPlaybackConfig(viewContent: JSONObject) = VideoPlaybackConfig(
+    autoplay = viewContent.optBoolean(keyName = "autoplay", fallback = false),
+    isMuted = viewContent.optBoolean(keyName = "isMuted", fallback = false),
+    autoLoop = viewContent.optBoolean(keyName = "autoLoop", fallback = false),
+    showPlaybackControls = viewContent.optBoolean(keyName = "showPlaybackControls", fallback = false),
+)
+
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun WebView(viewContent: JSONObject, modifier: Modifier = Modifier) {
+fun WebView(
+    viewContent: JSONObject,
+    modifier: Modifier = Modifier,
+    customContentDataProvider: CustomContentDataProvider? = null,
+) {
+    val context = LocalContext.current
 
     val sourceType = viewContent.optString(keyName = "sourceType", "")
-    val source = viewContent.getString(keyName = "source")
+    val source = viewContent.optString(keyName = "source", fallback = "")
+    if (source.isBlank()) return
 
     var backEnabled by remember { mutableStateOf(false) }
-    var webView: WebView? = null
+    var webView by remember { mutableStateOf<WebView?>(null) }
+    var loadedContent by remember { mutableStateOf<Pair<String, String>?>(null) }
+
+    fun loadContent(target: WebView) {
+        val requestedContent = sourceType to source
+        if (loadedContent == requestedContent) return
+
+        if (sourceType == "embedded") {
+            target.loadDataWithBaseURL(null, source, "text/html", "UTF-8", null)
+        } else {
+            target.loadUrl(source)
+        }
+        loadedContent = requestedContent
+    }
 
     AndroidView(
-        modifier = modifier,
-        factory = { context ->
-            WebView(context).apply {
+        modifier = modifier.getModifier(viewContent, context, customContentDataProvider),
+        factory = { viewContext ->
+            WebView(viewContext).apply {
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
@@ -1069,21 +1182,23 @@ fun WebView(viewContent: JSONObject, modifier: Modifier = Modifier) {
                     }
                 }
                 settings.javaScriptEnabled = true
-
-                if (sourceType == "embedded") {
-                    loadData(source, "text/html; charset=UTF-8", null)
-                } else {
-                    loadUrl(source)
-                }
-
+                loadContent(this)
                 webView = this
             }
         }, update = {
             webView = it
+            loadContent(it)
         })
 
     BackHandler(enabled = backEnabled) {
         webView?.goBack()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            webView?.stopLoading()
+            webView?.destroy()
+        }
     }
 }
 
@@ -1102,44 +1217,149 @@ fun PagerView(
 ) {
     val context = LocalContext.current
     val tabs = viewContent.getJSONArray(keyName = "tabs")
+    if (tabs.length() == 0) return
 
     val pagerState = rememberPagerState()
+    val pagerBehavior = resolvePagerBehavior(viewContent)
     val pagerContainerModifier = modifier.getViewportContainerModifier(
         viewContent,
         context,
         customContentDataProvider,
     )
 
+    LaunchedEffect(pagerBehavior.autorotate, tabs.length()) {
+        if (!pagerBehavior.autorotate || tabs.length() < 2) return@LaunchedEffect
+
+        while (true) {
+            delay(PAGER_AUTOROTATE_INTERVAL_MILLIS)
+            pagerState.animateScrollToPage((pagerState.currentPage + 1) % tabs.length())
+        }
+    }
+
     Column(modifier = pagerContainerModifier) {
+        val pagerModifier = Modifier
+            .weight(1f)
+            .fillMaxWidth()
 
-        HorizontalPager(count = tabs.length(),
-            state = pagerState,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-        ) { currentPage ->
+        val pageContent: @Composable PagerScope.(Int) -> Unit = { currentPage ->
+            val tab = tabs.getJSONObject(currentPage)
+            val tabContent = tab.getJSONObject(keyName = "tabContent")
 
-            val tabContent = tabs.getJSONObject(currentPage)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pagerEffectModifier(
+                        behavior = pagerBehavior,
+                        currentPage = currentPage,
+                        selectedPage = pagerState.currentPage,
+                        selectedPageOffset = pagerState.currentPageOffset,
+                    ),
+            ) {
+                if (tabContent.has(keyName = "type")) {
+                    AppstentView(
+                        viewContent = tabContent,
+                        navController = navController,
+                        customContentDataProvider = customContentDataProvider,
+                        actionHandlerProvider = actionHandlerProvider,
+                    )
+                }
+            }
+        }
 
-            AppstentView(
-                viewContent = tabContent.getJSONObject(keyName = "tabContent"),
-                Modifier,
-                navController,
-                customContentDataProvider,
-                actionHandlerProvider
+        if (pagerBehavior.axis == PagerAxis.Vertical) {
+            VerticalPager(
+                count = tabs.length(),
+                state = pagerState,
+                modifier = pagerModifier,
+                content = pageContent,
+            )
+        } else {
+            HorizontalPager(
+                count = tabs.length(),
+                state = pagerState,
+                modifier = pagerModifier,
+                content = pageContent,
             )
         }
 
-        Spacer(modifier = Modifier.padding(4.dp))
+        if (pagerBehavior.showsPageIndex(tabs.length())) {
+            Spacer(modifier = Modifier.padding(4.dp))
 
-        Box(modifier = Modifier.align(Alignment.CenterHorizontally),
-            contentAlignment = Alignment.Center) {
-            DotsIndicator(totalDots = tabs.length(),
-                selectedIndex = pagerState.currentPage,
-                selectedColor = Color(0xFF666666),
-                unSelectedColor = Color(0xFFE6E6E6)
-            )
+            Box(
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                contentAlignment = Alignment.Center,
+            ) {
+                DotsIndicator(
+                    totalDots = tabs.length(),
+                    selectedIndex = pagerState.currentPage,
+                    selectedColor = Color(0xFF666666),
+                    unSelectedColor = Color(0xFFE6E6E6),
+                )
+            }
         }
+    }
+}
+
+private const val PAGER_AUTOROTATE_INTERVAL_MILLIS = 3_000L
+
+internal enum class PagerAxis {
+    Horizontal,
+    Vertical,
+}
+
+internal enum class PageIndexMode {
+    Show,
+    Hide,
+    Automatic,
+}
+
+internal data class PagerBehavior(
+    val axis: PagerAxis,
+    val pageIndexMode: PageIndexMode,
+    val autorotate: Boolean,
+    val usesThreeDimensionalRotation: Boolean,
+    val rotationAngle: Float,
+) {
+    fun showsPageIndex(pageCount: Int): Boolean = when (pageIndexMode) {
+        PageIndexMode.Show -> true
+        PageIndexMode.Hide -> false
+        PageIndexMode.Automatic -> pageCount > 1
+    }
+}
+
+internal fun resolvePagerBehavior(viewContent: JSONObject) = PagerBehavior(
+    axis = if (viewContent.optString(keyName = "pagerAxis", fallback = "horizontal") == "vertical") {
+        PagerAxis.Vertical
+    } else {
+        PagerAxis.Horizontal
+    },
+    pageIndexMode = when (viewContent.optString(keyName = "pageIndexMode", fallback = "automatic")) {
+        "show" -> PageIndexMode.Show
+        "hide" -> PageIndexMode.Hide
+        else -> PageIndexMode.Automatic
+    },
+    autorotate = viewContent.optBoolean(keyName = "autorotate", fallback = false),
+    usesThreeDimensionalRotation =
+        viewContent.optString(keyName = "effects", fallback = "") == "3DRotate",
+    rotationAngle = viewContent.appstentResolvedDouble(keyName = "rotationAngle", fallback = -10.0).toFloat(),
+)
+
+private fun Modifier.pagerEffectModifier(
+    behavior: PagerBehavior,
+    currentPage: Int,
+    selectedPage: Int,
+    selectedPageOffset: Float,
+): Modifier {
+    if (!behavior.usesThreeDimensionalRotation) return this
+
+    val pageOffset = (selectedPage - currentPage) + selectedPageOffset
+    return graphicsLayer {
+        if (behavior.axis == PagerAxis.Vertical) {
+            rotationX = pageOffset * behavior.rotationAngle
+        } else {
+            rotationY = pageOffset * behavior.rotationAngle
+        }
+        cameraDistance = 8f * density
     }
 }
 
@@ -1325,19 +1545,85 @@ fun IncludedView(
     customContentDataProvider: CustomContentDataProvider? = null,
     actionHandlerProvider: ActionHandlerProvider? = null
 ) {
+    val context = LocalContext.current
     val fromSource = viewContent.optString(keyName = "source", fallback = "")
+    val overrides = viewContent.toString()
+    val repository = remember { ViewContentRepository() }
+    var state by remember(fromSource, overrides) {
+        mutableStateOf<IncludedContentState>(IncludedContentState.Loading)
+    }
 
-    if (fromSource.isNotEmpty()) {
-        val overrides = viewContent.toString()
-        var includedContent by remember(fromSource, overrides) { mutableStateOf(JSONObject()) }
-
-        LaunchedEffect(fromSource, overrides) {
-            val baseContent = ViewContentRepository().getContent(fromSource)
-            includedContent = mergeIncludedContent(baseContent, JSONObject(overrides))
+    LaunchedEffect(fromSource, overrides) {
+        state = IncludedContentState.Loading
+        if (fromSource.isBlank()) {
+            state = IncludedContentState.Error
+            return@LaunchedEffect
         }
 
-        AppstentView(viewContent = includedContent, modifier = modifier, navController, customContentDataProvider, actionHandlerProvider)
+        state = try {
+            val baseContent = repository.getContent(fromSource)
+            resolveIncludedContentState(
+                baseContent = baseContent,
+                wrapperContent = JSONObject(overrides),
+                error = null,
+            )
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            resolveIncludedContentState(
+                baseContent = null,
+                wrapperContent = JSONObject(overrides),
+                error = error,
+            )
+        }
     }
+
+    when (val currentState = state) {
+        IncludedContentState.Loading -> Box(
+            modifier = modifier.getModifier(viewContent, context, customContentDataProvider),
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.semantics {
+                    contentDescription = "Loading included content"
+                },
+            )
+        }
+
+        IncludedContentState.Error -> Box(
+            modifier = modifier.getModifier(viewContent, context, customContentDataProvider),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "Unable to load content",
+                color = MaterialTheme.colors.error,
+            )
+        }
+
+        is IncludedContentState.Loaded -> AppstentView(
+            viewContent = currentState.content,
+            modifier = modifier,
+            navController,
+            customContentDataProvider,
+            actionHandlerProvider,
+        )
+    }
+}
+
+internal sealed interface IncludedContentState {
+    data object Loading : IncludedContentState
+    data class Loaded(val content: JSONObject) : IncludedContentState
+    data object Error : IncludedContentState
+}
+
+internal fun resolveIncludedContentState(
+    baseContent: JSONObject?,
+    wrapperContent: JSONObject,
+    error: Throwable?,
+): IncludedContentState = if (error != null || baseContent == null) {
+    IncludedContentState.Error
+} else {
+    IncludedContentState.Loaded(mergeIncludedContent(baseContent, wrapperContent))
 }
 
 internal fun mergeIncludedContent(baseContent: JSONObject, wrapperContent: JSONObject): JSONObject {
@@ -1419,10 +1705,16 @@ private fun getGridCells(viewContent: JSONObject): GridCells {
     }
     else {
 
-        val gridRowColConfigs: JSONArray = if (viewContent.has(keyName = "columns"))
-            viewContent.getJSONArray(keyName = "columns")
-        else
-            viewContent.getJSONArray(keyName = "rows")
+        val gridRowColConfigs: JSONArray = when {
+            viewContent.has(keyName = "columns") -> viewContent.getJSONArray(keyName = "columns")
+            viewContent.has(keyName = "rows") -> viewContent.getJSONArray(keyName = "rows")
+            else -> JSONArray()
+        }
+        val trackSpecs = resolveGridTrackSpecs(gridRowColConfigs)
+
+        if (trackSpecs.isEmpty()) {
+            return GridCells.Fixed(1)
+        }
 
         object: GridCells {
             override fun Density.calculateCrossAxisCellSizes(
@@ -1430,33 +1722,114 @@ private fun getGridCells(viewContent: JSONObject): GridCells {
                 spacing: Int
             ): List<Int> {
 
-                var totalFixedSize = 0
-                var totalFlexibleItems = 0
+                return calculateGridTrackSizes(
+                    trackSpecs = trackSpecs,
+                    availableSize = availableSize,
+                    spacing = spacing,
+                    density = density,
+                )
+            }
+        }
+    }
+}
 
-                // calculate totalFixedSize and totalFlexibleItems
-                (0 until gridRowColConfigs.length()).forEach {
+internal sealed interface GridTrackSpec {
+    data class Fixed(val width: Double) : GridTrackSpec
+    data class Flexible(val minWidth: Double, val maxWidth: Double) : GridTrackSpec
+    data class Adaptive(val minWidth: Double, val maxWidth: Double) : GridTrackSpec
+}
 
-                    val rowColConfig = gridRowColConfigs.getJSONObject(it)
-                    if (rowColConfig.getString(keyName = "itemType") == "fixed") {
-                        totalFixedSize += (rowColConfig.appstentResolvedDouble(keyName = "width") * density).toInt()
-                    } else {
-                        totalFlexibleItems += 1
-                    }
-                }
+internal fun resolveGridTrackSpecs(configs: JSONArray): List<GridTrackSpec> =
+    (0 until configs.length()).map { index ->
+        val config = configs.getJSONObject(index)
+        val minWidth = max(0.0, config.appstentResolvedDouble("minWidth", fallback = 0.0))
+        val authoredMax = config.appstentResolvedDouble("maxWidth", fallback = Double.POSITIVE_INFINITY)
+        val maxWidth = max(minWidth, authoredMax)
 
-                return (0 until gridRowColConfigs.length()).map {
+        when (config.optString("itemType", fallback = "adaptive")) {
+            "fixed" -> GridTrackSpec.Fixed(
+                max(0.0, config.appstentResolvedDouble("width", fallback = 0.0)),
+            )
+            "flexible" -> GridTrackSpec.Flexible(minWidth, maxWidth)
+            else -> GridTrackSpec.Adaptive(minWidth, maxWidth)
+        }
+    }
 
-                    val rowColConfig = gridRowColConfigs.getJSONObject(it)
+internal fun calculateGridTrackSizes(
+    trackSpecs: List<GridTrackSpec>,
+    availableSize: Int,
+    spacing: Int,
+    density: Float,
+): List<Int> {
+    if (trackSpecs.isEmpty()) return emptyList()
 
-                    val size = if (rowColConfig.getString(keyName = "itemType") == "fixed") {
+    val totalSpacing = max(0, spacing) * max(0, trackSpecs.size - 1)
+    val availableForCells = max(0.0, availableSize.toDouble() - totalSpacing)
+    val minimumSizes = trackSpecs.map { spec ->
+        when (spec) {
+            is GridTrackSpec.Fixed -> spec.width * density
+            is GridTrackSpec.Flexible -> spec.minWidth * density
+            is GridTrackSpec.Adaptive -> spec.minWidth * density
+        }
+    }.toMutableList()
+    val maximumSizes = trackSpecs.map { spec ->
+        when (spec) {
+            is GridTrackSpec.Fixed -> spec.width * density
+            is GridTrackSpec.Flexible -> spec.maxWidth * density
+            // An adaptive entry owns a cross-axis segment that can expand into
+            // multiple bounded cells; maxWidth applies to each resulting cell.
+            is GridTrackSpec.Adaptive -> Double.POSITIVE_INFINITY
+        }
+    }
+    val expandable = trackSpecs.indices
+        .filter { trackSpecs[it] !is GridTrackSpec.Fixed }
+        .toMutableSet()
+    var remaining = max(0.0, availableForCells - minimumSizes.sum())
 
-                        (rowColConfig.appstentResolvedDouble(keyName = "width") * density).toInt()
-                    } else {
-                        ((availableSize - spacing) - totalFixedSize) / totalFlexibleItems
-                    }
+    while (remaining > 0.5 && expandable.isNotEmpty()) {
+        val share = remaining / expandable.size
+        var distributed = 0.0
+        val saturated = mutableListOf<Int>()
 
-                    return@map size
-                }
+        for (index in expandable) {
+            val capacity = maximumSizes[index] - minimumSizes[index]
+            val addition = min(share, capacity)
+            minimumSizes[index] += addition
+            distributed += addition
+            if (capacity <= share + 0.5) saturated += index
+        }
+
+        remaining -= distributed
+        expandable.removeAll(saturated.toSet())
+        if (distributed <= 0.5) break
+    }
+
+    return buildList {
+        trackSpecs.forEachIndexed { index, spec ->
+            val allocatedSize = minimumSizes[index]
+            if (spec !is GridTrackSpec.Adaptive) {
+                add(max(0, allocatedSize.toInt()))
+                return@forEachIndexed
+            }
+
+            val minimumCellSize = spec.minWidth * density
+            val maximumCellSize = spec.maxWidth * density
+            if (minimumCellSize <= 0.0) {
+                add(max(0, min(allocatedSize, maximumCellSize).toInt()))
+                return@forEachIndexed
+            }
+
+            val adaptiveCount = max(
+                1,
+                ((allocatedSize + spacing) / (minimumCellSize + max(0, spacing))).toInt(),
+            )
+            val adaptiveSpacing = max(0, spacing) * max(0, adaptiveCount - 1)
+            val adaptiveCellSize = min(
+                maximumCellSize,
+                max(0.0, (allocatedSize - adaptiveSpacing) / adaptiveCount),
+            )
+            repeat(adaptiveCount) {
+                add(max(0, adaptiveCellSize.toInt()))
             }
         }
     }
@@ -1478,44 +1851,101 @@ fun ListView(
         context,
         customContentDataProvider,
     )
+    val listBehavior = resolveListStyleBehavior(viewContent)
+    val contentPadding = PaddingValues(
+        horizontal = listBehavior.horizontalInset.dp,
+        vertical = listBehavior.verticalInset.dp,
+    )
 
     if (viewContent.has(keyName = "sections")) {
 
         val sections = viewContent.getJSONArray(keyName = "sections")
 
-        LazyColumn(modifier = listModifier) {
+        LazyColumn(
+            modifier = listModifier,
+            contentPadding = contentPadding,
+        ) {
 
-            (0 until sections.length()).forEach {
+            (0 until sections.length()).forEach { sectionIndex ->
 
-                val sectionObject = sections.getJSONObject(it)
-                val text = sectionObject.getString(keyName = "title")
+                val sectionObject = sections.getJSONObject(sectionIndex)
+                val text = sectionObject.optString(keyName = "title", fallback = "")
                 stickyHeader {
-                    Text(text = text,
-                        modifier = Modifier)
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.subtitle2,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colors.background)
+                            .padding(vertical = listBehavior.headerVerticalPadding.dp),
+                    )
                 }
 
                 val views = sectionObject.getJSONArray(keyName = "views")
 
-                (0 until views.length()).forEach {
+                (0 until views.length()).forEach { viewIndex ->
 
                     item {
-                        AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider, actionHandlerProvider)
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            AppstentView(viewContent = views.getJSONObject(viewIndex), Modifier, navController, customContentDataProvider, actionHandlerProvider)
+                            if (listBehavior.showsDividers && viewIndex < views.length() - 1) {
+                                Divider()
+                            }
+                        }
                     }
+                }
+
+                if (listBehavior.sectionSpacing > 0 && sectionIndex < sections.length() - 1) {
+                    item { Spacer(Modifier.height(listBehavior.sectionSpacing.dp)) }
                 }
             }
         }
     } else {
         val views = viewContent.getJSONArray(keyName = "views")
 
-        LazyColumn(modifier = listModifier) {
-            (0 until views.length()).forEach {
+        LazyColumn(
+            modifier = listModifier,
+            contentPadding = contentPadding,
+        ) {
+            (0 until views.length()).forEach { viewIndex ->
                 item {
-                    AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider, actionHandlerProvider)
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        AppstentView(viewContent = views.getJSONObject(viewIndex), Modifier, navController, customContentDataProvider, actionHandlerProvider)
+                        if (listBehavior.showsDividers && viewIndex < views.length() - 1) {
+                            Divider()
+                        }
+                    }
                 }
             }
         }
     }
 }
+
+internal enum class ListStyleKind {
+    Plain,
+    Sidebar,
+    Inset,
+    Grouped,
+    InsetGrouped,
+}
+
+internal data class ListStyleBehavior(
+    val kind: ListStyleKind,
+    val horizontalInset: Int,
+    val verticalInset: Int,
+    val headerVerticalPadding: Int,
+    val sectionSpacing: Int,
+    val showsDividers: Boolean,
+)
+
+internal fun resolveListStyleBehavior(viewContent: JSONObject): ListStyleBehavior =
+    when (viewContent.optString("listStyle", fallback = "plainListStyle")) {
+        "sidebarListStyle" -> ListStyleBehavior(ListStyleKind.Sidebar, 12, 8, 8, 8, false)
+        "insetListStyle" -> ListStyleBehavior(ListStyleKind.Inset, 16, 8, 6, 0, true)
+        "groupedListStyle" -> ListStyleBehavior(ListStyleKind.Grouped, 0, 12, 8, 20, false)
+        "insetGroupedListStyle" -> ListStyleBehavior(ListStyleKind.InsetGrouped, 16, 12, 8, 20, false)
+        else -> ListStyleBehavior(ListStyleKind.Plain, 0, 0, 6, 0, true)
+    }
 
 @Composable
 fun NavigationApstentView(
@@ -1527,6 +1957,8 @@ fun NavigationApstentView(
     val context = LocalContext.current
 
     val views = viewContent.getJSONArray(keyName = "views")
+    val navigationBarBehavior = resolveNavigationBarBehavior(viewContent)
+    val toolbarViews = viewContent.getJSONArray(keyName = "toolbarViews")
     val rootRoute = "__appstent_root__"
     val navModifier = modifier.getViewportContainerModifier(
         viewContent,
@@ -1535,23 +1967,61 @@ fun NavigationApstentView(
     )
     val navController = rememberNavController()
 
-    NavHost(
+    Scaffold(
         modifier = navModifier,
-        navController = navController,
-        startDestination = rootRoute,
-    ) {
-        composable(rootRoute) {
-            CurrentNavScreenContent(
-                views,
-                navController,
-                customContentDataProvider,
-                actionHandlerProvider,
-            )
-        }
+        topBar = {
+            if (!navigationBarBehavior.isHidden) {
+                TopAppBar(
+                    title = { Text(navigationBarBehavior.title) },
+                    actions = {
+                        (0 until toolbarViews.length()).forEach { index ->
+                            AppstentView(
+                                viewContent = toolbarViews.getJSONObject(index),
+                                navController = navController,
+                                customContentDataProvider = customContentDataProvider,
+                                actionHandlerProvider = actionHandlerProvider,
+                            )
+                        }
+                    },
+                )
+            }
+        },
+    ) { innerPadding ->
+        NavHost(
+            modifier = Modifier.padding(innerPadding),
+            navController = navController,
+            startDestination = rootRoute,
+        ) {
+            composable(rootRoute) {
+                CurrentNavScreenContent(
+                    views,
+                    navController,
+                    customContentDataProvider,
+                    actionHandlerProvider,
+                )
+            }
 
-        // Crawl through the view hierarchy to create composables for routes.
-        navigationComposable(viewContent, this, customContentDataProvider, actionHandlerProvider)
+            // Crawl through the view hierarchy to create composables for routes.
+            navigationComposable(viewContent, this, customContentDataProvider, actionHandlerProvider)
+        }
     }
+}
+
+internal data class NavigationBarBehavior(
+    val title: String,
+    val isHidden: Boolean,
+)
+
+internal fun resolveNavigationBarBehavior(viewContent: JSONObject): NavigationBarBehavior {
+    val title = viewContent.optString(keyName = "barTitle", fallback = "")
+    val hasToolbarContent = (viewContent.optJSONArray("toolbarViews")?.length() ?: 0) > 0
+    val isHidden = if (viewContent.has("isBarHidden")) {
+        viewContent.optBoolean(keyName = "isBarHidden", fallback = false)
+    } else {
+        title.isBlank() && !hasToolbarContent
+    }
+
+    return NavigationBarBehavior(title = title, isHidden = isHidden)
 }
 
 @Composable
@@ -1700,10 +2170,11 @@ fun BottomBar(
 
                     BottomNavigationItem(
                         icon = {
-                            AppstentView(
+                            BottomBarIcon(
                                 viewContent = icon,
+                                title = title,
                                 customContentDataProvider = customContentDataProvider,
-                                actionHandlerProvider = actionHandlerProvider
+                                actionHandlerProvider = actionHandlerProvider,
                             )
                         },
                         label = { Text(title) },
@@ -1746,6 +2217,52 @@ fun BottomBar(
                 }
             }
         }
+    }
+}
+
+private val BottomBarIconSize = 24.dp
+
+@Composable
+private fun BottomBarIcon(
+    viewContent: JSONObject,
+    title: String,
+    customContentDataProvider: CustomContentDataProvider?,
+    actionHandlerProvider: ActionHandlerProvider?,
+) {
+    val context = LocalContext.current
+    val resolvedSource = resolveImageSource(
+        viewContent = viewContent,
+        previewMode = ModuleConfigs.inPreviewMode,
+        dynamicImageSource = null,
+    )
+
+    if (resolvedSource is ResolvedImageSource.System) {
+        val imageVector = iconFromOutlinedPack(resolvedSource.name) ?: Icons.Outlined.Warning
+        val tint = viewContent
+            .optString(keyName = "foregroundColor", fallback = "")
+            .takeIf(String::isNotBlank)
+            ?.let { resolveAppstentColor(it, context, customContentDataProvider) }
+            ?: LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
+
+        Material2Icon(
+            imageVector = imageVector,
+            contentDescription = title,
+            modifier = Modifier.size(BottomBarIconSize),
+            tint = tint,
+        )
+        return
+    }
+
+    Box(
+        modifier = Modifier.size(BottomBarIconSize),
+        contentAlignment = Alignment.Center,
+    ) {
+        AppstentView(
+            viewContent = viewContent,
+            modifier = Modifier.size(BottomBarIconSize),
+            customContentDataProvider = customContentDataProvider,
+            actionHandlerProvider = actionHandlerProvider,
+        )
     }
 }
 

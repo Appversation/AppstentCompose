@@ -23,6 +23,7 @@ class ViewContentConformanceTest {
             "text-alignment",
             "stack-spacing",
             "relative-sizing",
+            "fill-modifier-sizing",
             "image-unframed-fit",
             "image-bounded-fit-fill",
             "intrinsic-stacks",

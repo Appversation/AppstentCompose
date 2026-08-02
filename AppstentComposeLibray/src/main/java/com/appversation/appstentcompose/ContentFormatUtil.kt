@@ -6,7 +6,9 @@ import androidx.compose.ui.Alignment.Companion.BottomCenter
 import androidx.compose.ui.Alignment.Companion.BottomEnd
 import androidx.compose.ui.Alignment.Companion.BottomStart
 import androidx.compose.ui.Alignment.Companion.Center
+import androidx.compose.ui.Alignment.Companion.CenterEnd
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
+import androidx.compose.ui.Alignment.Companion.CenterStart
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Alignment.Companion.End
 import androidx.compose.ui.Alignment.Companion.Start
@@ -101,7 +103,9 @@ fun getAlignment(alignmentString: String) : Alignment {
         "topLeading"    -> TopStart
         "top"           -> TopCenter
         "topTrailing"   -> TopEnd
+        "leading"       -> CenterStart
         "center"        -> Center
+        "trailing"      -> CenterEnd
         "bottomLeading" -> BottomStart
         "bottom"        -> BottomCenter
         "bottomTrailing"-> BottomEnd

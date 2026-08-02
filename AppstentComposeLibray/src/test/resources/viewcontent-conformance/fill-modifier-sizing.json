@@ -1,0 +1,21 @@
+{
+  "type": "zStack",
+  "width": 320,
+  "height": 180,
+  "alignment": "center",
+  "views": [
+    {
+      "type": "text",
+      "text": "Fills container",
+      "text_alignment": "center",
+      "fillModifier": "fillMaxSize",
+      "backgroundColor": "#D6EAF8"
+    },
+    {
+      "type": "text",
+      "text": "Intrinsic overlay",
+      "padding": 10,
+      "backgroundColor": "#FCF3CF"
+    }
+  ]
+}

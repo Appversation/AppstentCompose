@@ -16,7 +16,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.appversation.appstentcompose.ModuleConfigs.CustomContentDataProvider
 import org.json.JSONException
@@ -30,14 +32,15 @@ fun Modifier.getModifier(
 ) : Modifier {
     return this
         .getPaddingModifier(modifierContent)
+        .getFixedSizeModifier(modifierContent)
         .getFrameSizeModifier(modifierContent)
+        .getFillSizeModifier(modifierContent)
         .getOffsetModifier(modifierContent)
         .getShadowModifier(modifierContent, context, customContentDataProvider)
         .getClipShapeModifier(modifierContent)
         .getCornerRadiusModifier(modifierContent)
         .getBackgroundModifier(modifierContent, context, customContentDataProvider)
         .getBorderModifier(modifierContent, context, customContentDataProvider)
-        .getFillSizeModifier(modifierContent)
         .getPreviewSelectionInputModifier(modifierContent)
         .getPreviewSelectionModifier(modifierContent)
 }
@@ -206,7 +209,7 @@ fun Modifier.getFrameSizeModifier(modifierContent: JSONObject) : Modifier {
 
             modifier.requiredWidth(width.dp)
         } else {
-            modifier.fillMaxWidth()
+            modifier
         }
 
         if (modifierContent.has(keyName = "height")) {
@@ -215,29 +218,37 @@ fun Modifier.getFrameSizeModifier(modifierContent: JSONObject) : Modifier {
             modifier = modifier.requiredHeight(height.dp)
         }
 
-        val minWidth = if (modifierContent.has(keyName = "minWidth")) {
-            modifierContent.appstentResolvedDouble(keyName = "minWidth").dp
-        } else {
-            Dp.Unspecified
+        if (!modifierContent.has(keyName = "width") && modifierContent.has(keyName = "percent_width")) {
+            val widthFraction = modifierContent
+                .appstentResolvedDouble(keyName = "percent_width")
+                .coerceAtLeast(0.0)
+                .toFloat()
+            modifier = modifier.fillMaxWidth(widthFraction)
         }
 
-        val minHeight = if (modifierContent.has(keyName = "minHeight")) {
-            modifierContent.appstentResolvedDouble(keyName = "minHeight").dp
-        } else {
-            Dp.Unspecified
+        if (!modifierContent.has(keyName = "height") && modifierContent.has(keyName = "percent_height")) {
+            val heightFraction = modifierContent
+                .appstentResolvedDouble(keyName = "percent_height")
+                .coerceAtLeast(0.0)
+                .toFloat()
+            modifier = modifier.fillMaxHeight(heightFraction)
         }
 
-        val maxWidth = if (modifierContent.has(keyName = "maxWidth")) {
-            modifierContent.appstentResolvedDouble(keyName = "maxWidth").dp
-        } else {
-            Dp.Unspecified
-        }
+        val idealWidth = modifierContent.resolvedDimension("idealWidth", "ideal_width")
+        val idealHeight = modifierContent.resolvedDimension("idealHeight", "ideal_height")
+        modifier = modifier.idealSize(idealWidth, idealHeight)
 
-        val maxHeight = if (modifierContent.has(keyName = "maxHeight")) {
-            modifierContent.appstentResolvedDouble(keyName = "maxHeight").dp
-        } else {
-            Dp.Unspecified
-        }
+        val minWidth = modifierContent.resolvedDimension("minWidth", "min_width")?.dp
+            ?: Dp.Unspecified
+
+        val minHeight = modifierContent.resolvedDimension("minHeight", "min_height")?.dp
+            ?: Dp.Unspecified
+
+        val maxWidth = modifierContent.resolvedDimension("maxWidth", "max_width")?.dp
+            ?: Dp.Unspecified
+
+        val maxHeight = modifierContent.resolvedDimension("maxHeight", "max_height")?.dp
+            ?: Dp.Unspecified
 
         modifier = modifier.sizeIn(minWidth = minWidth, minHeight = minHeight, maxWidth = maxWidth, maxHeight = maxHeight)
 
@@ -245,6 +256,19 @@ fun Modifier.getFrameSizeModifier(modifierContent: JSONObject) : Modifier {
     } catch (e: JSONException) {
         this
     }
+}
+
+fun Modifier.getFixedSizeModifier(modifierContent: JSONObject): Modifier {
+    var modifier = this
+
+    if (modifierContent.optBoolean(keyName = "fixedWidth", fallback = false)) {
+        modifier = modifier.width(IntrinsicSize.Max)
+    }
+    if (modifierContent.optBoolean(keyName = "fixedHeight", fallback = false)) {
+        modifier = modifier.height(IntrinsicSize.Max)
+    }
+
+    return modifier
 }
 
 fun Modifier.getFillSizeModifier(modifierContent: JSONObject) : Modifier {
@@ -275,9 +299,42 @@ fun Modifier.getFillSizeModifier(modifierContent: JSONObject) : Modifier {
             modifier
         }
 
+        modifier = when (modifierContent.optString(keyName = "fillModifier", fallback = "")) {
+            "fillMaxWidth" -> modifier.fillMaxWidth()
+            "fillMaxHeight" -> modifier.fillMaxHeight()
+            "fillMaxSize" -> modifier.fillMaxSize()
+            else -> modifier
+        }
+
         modifier
     } catch (e: JSONException) {
         this
+    }
+}
+
+private fun JSONObject.resolvedDimension(vararg keyNames: String): Double? {
+    val keyName = keyNames.firstOrNull { has(it) } ?: return null
+    return appstentResolvedDouble(keyName = keyName)
+}
+
+private fun Modifier.idealSize(idealWidth: Double?, idealHeight: Double?): Modifier {
+    if (idealWidth == null && idealHeight == null) {
+        return this
+    }
+
+    return layout { measurable, constraints ->
+        val width = idealWidth?.dp?.roundToPx()
+        val height = idealHeight?.dp?.roundToPx()
+        val childConstraints = Constraints(
+            minWidth = if (!constraints.hasBoundedWidth && width != null) width else constraints.minWidth,
+            maxWidth = if (!constraints.hasBoundedWidth && width != null) width else constraints.maxWidth,
+            minHeight = if (!constraints.hasBoundedHeight && height != null) height else constraints.minHeight,
+            maxHeight = if (!constraints.hasBoundedHeight && height != null) height else constraints.maxHeight,
+        )
+        val placeable = measurable.measure(childConstraints)
+        layout(placeable.width, placeable.height) {
+            placeable.placeRelative(0, 0)
+        }
     }
 }
 
@@ -306,7 +363,7 @@ fun Modifier.getShadowModifier(
     return try {
         modifier = if (modifierContent.has(keyName = "shadow")) {
 
-            val rawShadow = modifierContent.opt("shadow")
+            val rawShadow = modifierContent.optPlatformValue("shadow")
             val shadowObject = when {
                 rawShadow is JSONObject -> rawShadow
                 rawShadow is String && AppstentDesignTokenResolver.isTokenReference(rawShadow) ->

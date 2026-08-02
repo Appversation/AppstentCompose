@@ -62,6 +62,18 @@
       ]
     },
     {
+      "id": "fill-modifier-sizing",
+      "file": "fill-modifier-sizing.json",
+      "concern": "fill modifier sizing inside finite bounds",
+      "baselinePolicy": "shared",
+      "assertions": [
+        { "path": "/width", "equals": 320 },
+        { "path": "/height", "equals": 180 },
+        { "path": "/views/0/fillModifier", "equals": "fillMaxSize" },
+        { "path": "/views/1/fillModifier", "absent": true }
+      ]
+    },
+    {
       "id": "image-unframed-fit",
       "file": "image-unframed-fit.json",
       "concern": "unframed image fit",
@@ -202,6 +214,8 @@
       "baselinePolicy": "platform",
       "nativeDifference": "Tab and page indicators use native controls.",
       "assertions": [
+        { "path": "/width", "equals": 320 },
+        { "path": "/height", "equals": 240 },
         { "path": "/pagerAxis", "equals": "horizontal" },
         { "path": "/pageIndexMode", "equals": "hide" },
         { "path": "/tabs", "length": 2 }
@@ -214,6 +228,8 @@
       "baselinePolicy": "platform",
       "nativeDifference": "Navigation bars, toolbar placement, and link chrome use native controls.",
       "assertions": [
+        { "path": "/width", "equals": 320 },
+        { "path": "/height", "equals": 320 },
         { "path": "/barTitle", "equals": "Conformance" },
         { "path": "/isBarHidden", "equals": false },
         { "path": "/toolbarViews", "length": 1 },

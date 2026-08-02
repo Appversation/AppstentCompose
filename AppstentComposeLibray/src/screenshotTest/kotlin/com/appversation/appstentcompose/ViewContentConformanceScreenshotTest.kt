@@ -42,6 +42,11 @@ fun RelativeSizingScreenshot() = renderFixture("relative-sizing")
 @PreviewTest
 @ConformancePreview
 @Composable
+fun FillModifierSizingScreenshot() = renderFixture("fill-modifier-sizing")
+
+@PreviewTest
+@ConformancePreview
+@Composable
 fun ImageUnframedFitScreenshot() = renderFixture("image-unframed-fit")
 
 @PreviewTest

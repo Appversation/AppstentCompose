@@ -64,9 +64,17 @@ fun JSONObject.optInt(keyName: String, fallback: Int): Int {
 fun JSONObject.optBoolean(keyName: String, fallback: Boolean): Boolean {
 
     return if (this.has("android:$keyName")) {
-        optBoolean("android:$keyName", false)
+        optBoolean("android:$keyName", fallback)
     } else {
-        optBoolean(keyName, false)
+        optBoolean(keyName, fallback)
+    }
+}
+
+fun JSONObject.optPlatformValue(keyName: String): Any? {
+    return if (this.has("android:$keyName")) {
+        opt("android:$keyName")
+    } else {
+        opt(keyName)
     }
 }
 

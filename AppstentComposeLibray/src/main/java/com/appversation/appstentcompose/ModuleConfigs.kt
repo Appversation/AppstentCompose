@@ -3,6 +3,7 @@ package com.appversation.appstentcompose
 import android.os.Handler
 import android.os.Looper
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import org.json.JSONObject
 
@@ -118,6 +119,15 @@ object ModuleConfigs {
         @Composable
         fun CustomComposable(viewName: String)
 
+        /**
+         * Descriptor-aware overload. Existing providers automatically fall
+         * back to the name-only method until they adopt this API.
+         */
+        @Composable
+        fun CustomComposable(context: CustomContentViewContext) {
+            CustomComposable(context.viewName)
+        }
+
         fun getFontFamilyFrom(name: String) : FontFamily
 
         fun visibility(ruleName: String, ruleValue: String): Boolean
@@ -133,6 +143,23 @@ object ModuleConfigs {
     interface ActionHandlerProvider {
 
         fun handleTap(handlerName: String, data: JSONObject?)
+    }
+
+    data class CustomContentViewContext(
+        val viewContent: JSONObject,
+        val viewName: String,
+        val modifier: Modifier,
+        val customContentDataProvider: CustomContentDataProvider?,
+        val actionHandlerProvider: ActionHandlerProvider?,
+    ) {
+        fun performAction(handlerName: String, data: JSONObject? = null) {
+            dispatchAppstentAction(
+                handlerName = handlerName,
+                data = data,
+                localHandler = actionHandlerProvider,
+                globalHandler = globalActionHandlerProvider,
+            )
+        }
     }
 
     interface AppstentViewNavigationProvider {

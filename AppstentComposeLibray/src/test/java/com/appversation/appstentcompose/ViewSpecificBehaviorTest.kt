@@ -6,6 +6,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.ui.Modifier
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -14,6 +15,79 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ViewSpecificBehaviorTest {
+    @Test
+    fun actionDispatchInvokesLocalAndGlobalHandlersExactlyOnce() {
+        val local = RecordingActionHandler()
+        val global = RecordingActionHandler()
+        val data = JSONObject().put("origin", "test")
+
+        dispatchAppstentAction(
+            handlerName = "saveAction",
+            data = data,
+            localHandler = local,
+            globalHandler = global,
+        )
+
+        assertEquals(listOf("saveAction"), local.names)
+        assertEquals(listOf("saveAction"), global.names)
+        assertEquals("test", local.data.single()?.getString("origin"))
+        assertEquals("test", global.data.single()?.getString("origin"))
+    }
+
+    @Test
+    fun customContextExposesDescriptorAndDispatchesRegisteredHandlers() {
+        val local = RecordingActionHandler()
+        val global = RecordingActionHandler()
+        val previousGlobal = ModuleConfigs.globalActionHandlerProvider
+        ModuleConfigs.globalActionHandlerProvider = global
+
+        try {
+            val descriptor = JSONObject()
+                .put("type", "custom")
+                .put("customViewName", "accountCard")
+                .put("customPayload", JSONObject().put("accountID", "example"))
+            val context = ModuleConfigs.CustomContentViewContext(
+                viewContent = descriptor,
+                viewName = "accountCard",
+                modifier = Modifier,
+                customContentDataProvider = null,
+                actionHandlerProvider = local,
+            )
+
+            context.performAction("customAction")
+
+            assertEquals("example", context.viewContent.getJSONObject("customPayload").getString("accountID"))
+            assertEquals(listOf("customAction"), local.names)
+            assertEquals(listOf("customAction"), global.names)
+        } finally {
+            ModuleConfigs.globalActionHandlerProvider = previousGlobal
+        }
+    }
+
+    @Test
+    fun accessibilityConfigurationUsesAuthoredValuesAndEnabledDefaults() {
+        val configured = resolveAccessibilityConfiguration(
+            JSONObject()
+                .put("accessibilityLabel", "Account card")
+                .put("accessibilityHint", "Opens the account")
+                .put("accessibilityIdentifier", "account.card")
+                .put("accessibilityRole", "button")
+                .put("accessibilityTraits", JSONArray().put("selected"))
+                .put("isEnabled", false)
+                .put("isDecorative", true),
+        )
+        val defaults = resolveAccessibilityConfiguration(JSONObject())
+
+        assertEquals("Account card. Opens the account", configured.spokenDescription)
+        assertEquals("account.card", configured.identifier)
+        assertEquals("button", configured.role)
+        assertEquals(listOf("selected"), configured.traits)
+        assertFalse(configured.isEnabled)
+        assertTrue(configured.isDecorative)
+        assertTrue(defaults.isEnabled)
+        assertFalse(defaults.isDecorative)
+    }
+
     @Test
     fun previewImageOverridesTheAuthoredSource() {
         val descriptor = JSONObject()
@@ -173,6 +247,18 @@ class ViewSpecificBehaviorTest {
     }
 
     @Test
+    fun remoteNavigationDestinationsSupportRuntimeIncludedRoutes() {
+        val source = "Showcase/Examples/AppFlows/Launch Home?variant=featured"
+        val destination = remoteIncludedDestination(source)
+        val encodedSource = destination.substringAfterLast('/')
+
+        assertTrue(destination.startsWith("__appstent_remote_included__/"))
+        assertFalse(encodedSource.contains('/'))
+        assertEquals(source, decodeRemoteIncludedSource(encodedSource))
+        assertEquals(null, decodeRemoteIncludedSource("not valid base64"))
+    }
+
+    @Test
     fun sfSymbolAliasesResolveToAndroidSystemIcons() {
         assertEquals(Icons.Outlined.Home, iconFromOutlinedPack("house"))
         assertEquals(Icons.Outlined.QrCodeScanner, iconFromOutlinedPack("qrcode.viewfinder"))
@@ -242,6 +328,50 @@ class ViewSpecificBehaviorTest {
     }
 
     @Test
+    fun intrinsicVerticalGridUsesFiniteTracksInsideScrollableParents() {
+        val descriptor = JSONObject()
+            .put("type", "grid")
+            .put("numColumns", 2)
+
+        assertEquals(
+            listOf(164, 164),
+            calculateIntrinsicVerticalGridTrackSizes(
+                viewContent = descriptor,
+                availableSize = 340,
+                spacing = 12,
+                density = 1f,
+            ),
+        )
+    }
+
+    @Test
+    fun unboundedNestedVerticalStacksShareTheAncestorScrollViewport() {
+        val unboundedScrollable = JSONObject().put("scrollable", true)
+        val boundedScrollable = JSONObject()
+            .put("scrollable", true)
+            .put("height", 240)
+
+        assertTrue(
+            shouldApplyVerticalScroll(
+                viewContent = unboundedScrollable,
+                isInsideVerticalScroller = false,
+            ),
+        )
+        assertFalse(
+            shouldApplyVerticalScroll(
+                viewContent = unboundedScrollable,
+                isInsideVerticalScroller = true,
+            ),
+        )
+        assertTrue(
+            shouldApplyVerticalScroll(
+                viewContent = boundedScrollable,
+                isInsideVerticalScroller = true,
+            ),
+        )
+    }
+
+    @Test
     fun listStylesResolveToDistinctNativeInspiredBehaviors() {
         val expectedKinds = mapOf(
             "plainListStyle" to ListStyleKind.Plain,
@@ -286,5 +416,15 @@ class ViewSpecificBehaviorTest {
         assertEquals("text", (loaded as IncludedContentState.Loaded).content.getString("type"))
         assertEquals("Override", loaded.content.getString("text"))
         assertEquals(IncludedContentState.Error, failed)
+    }
+}
+
+private class RecordingActionHandler : ModuleConfigs.ActionHandlerProvider {
+    val names = mutableListOf<String>()
+    val data = mutableListOf<JSONObject?>()
+
+    override fun handleTap(handlerName: String, data: JSONObject?) {
+        names += handlerName
+        this.data += data
     }
 }

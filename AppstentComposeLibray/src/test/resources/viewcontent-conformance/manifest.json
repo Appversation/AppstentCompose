@@ -212,6 +212,20 @@
       ]
     },
     {
+      "id": "actions-accessibility",
+      "file": "actions-accessibility.json",
+      "concern": "actions, descriptor-aware custom views, and accessibility semantics",
+      "baselinePolicy": "structural-only",
+      "assertions": [
+        { "path": "/views/0/tapHandlerName", "equals": "linkAction" },
+        { "path": "/views/0/accessibilityRole", "equals": "link" },
+        { "path": "/views/2/views/0/tapHandlerData/origin", "equals": "menu" },
+        { "path": "/views/4/customPayload/accountID", "equals": "example" },
+        { "path": "/views/4/accessibilityTraits/0", "equals": "selected" },
+        { "path": "/views/5/isDecorative", "equals": true }
+      ]
+    },
+    {
       "id": "included-overrides",
       "file": "included-overrides.json",
       "concern": "included content override precedence",

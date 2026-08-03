@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
@@ -117,39 +118,83 @@ import kotlin.math.max
 import kotlin.math.min
 
 
+private val LocalVerticallyScrollableAppstentParent = compositionLocalOf { false }
+private val LocalAncestorAppstentActions = compositionLocalOf<List<AppstentActionDescriptor>> {
+    emptyList()
+}
+
+private data class AppstentActionDescriptor(
+    val name: String,
+    val data: JSONObject?,
+)
+
+internal fun shouldApplyVerticalScroll(
+    viewContent: JSONObject,
+    isInsideVerticalScroller: Boolean,
+): Boolean {
+    if (!viewContent.optBoolean(keyName = "scrollable", fallback = false)) return false
+
+    // Compose cannot measure an unbounded vertical scroller inside another vertical scroller.
+    // Keep independently bounded child viewports scrollable, but let an unframed child expand
+    // intrinsically and rely on the nearest ancestor viewport for scrolling.
+    return !isInsideVerticalScroller || viewContent.has(keyName = "height")
+}
+
 @Composable
 fun AppstentView(
     viewContent: JSONObject,
     modifier: Modifier = Modifier,
     navController: NavHostController? = null,
     customContentDataProvider: CustomContentDataProvider? = null,
-    actionHandlerProvider: ActionHandlerProvider? = null
+    actionHandlerProvider: ActionHandlerProvider? = null,
+    handlesTapActions: Boolean = true,
 ) {
     AppstentTheme {
         if (viewContent.has(keyName = "type") && isVisible(viewContent, customContentDataProvider)) {
-            val interactiveModifier = modifier.getTapHandlerModifier(viewContent, actionHandlerProvider)
+            val ancestorActions = LocalAncestorAppstentActions.current
+            val ownAction = if (
+                handlesTapActions &&
+                viewContent.optBoolean(keyName = "isEnabled", fallback = true)
+            ) {
+                viewContent.appstentActionDescriptor()
+            } else {
+                null
+            }
+            val type = viewContent.optString(keyName = "type", fallback = "")
+            val actionHandledByNativeControl = type == "link" || type == "navigationLink"
+            val interactiveModifier = if (ownAction != null && !actionHandledByNativeControl) {
+                modifier.appstentClickableAction(
+                    actions = listOf(ownAction) + ancestorActions,
+                    actionHandlerProvider = actionHandlerProvider,
+                )
+            } else {
+                modifier
+            }
+            val descendantActions = ownAction?.let { listOf(it) + ancestorActions } ?: ancestorActions
             val overlayView = if (viewContent.has(keyName = "overlay_view")) {
                 viewContent.getJSONObject(keyName = "overlay_view")
             } else {
                 null
             }
 
-            if (overlayView == null) {
-                AppstentViewContent(viewContent, interactiveModifier, navController, customContentDataProvider, actionHandlerProvider)
-            } else {
-                val overlayAlignment = getAlignment(viewContent.optString(keyName = "alignment", fallback = "center"))
-                Box(modifier = interactiveModifier) {
-                    AppstentViewContent(viewContent, Modifier, navController, customContentDataProvider, actionHandlerProvider)
-                    Box(
-                        modifier = Modifier.matchParentSize(),
-                        contentAlignment = overlayAlignment,
-                    ) {
-                        AppstentView(
-                            viewContent = overlayView,
-                            navController = navController,
-                            customContentDataProvider = customContentDataProvider,
-                            actionHandlerProvider = actionHandlerProvider,
-                        )
+            CompositionLocalProvider(LocalAncestorAppstentActions provides descendantActions) {
+                if (overlayView == null) {
+                    AppstentViewContent(viewContent, interactiveModifier, navController, customContentDataProvider, actionHandlerProvider)
+                } else {
+                    val overlayAlignment = getAlignment(viewContent.optString(keyName = "alignment", fallback = "center"))
+                    Box(modifier = interactiveModifier) {
+                        AppstentViewContent(viewContent, Modifier, navController, customContentDataProvider, actionHandlerProvider)
+                        Box(
+                            modifier = Modifier.matchParentSize(),
+                            contentAlignment = overlayAlignment,
+                        ) {
+                            AppstentView(
+                                viewContent = overlayView,
+                                navController = navController,
+                                customContentDataProvider = customContentDataProvider,
+                                actionHandlerProvider = actionHandlerProvider,
+                            )
+                        }
                     }
                 }
             }
@@ -170,7 +215,7 @@ private fun AppstentViewContent(
         "divider" -> DividerView(viewContent, modifier, customContentDataProvider)
         "gradientView" -> GradientView(viewContent, modifier, customContentDataProvider)
         "text" -> TextView(viewContent, modifier, customContentDataProvider)
-        "link" -> LinkView(viewContent, modifier, customContentDataProvider)
+        "link" -> LinkView(viewContent, modifier, customContentDataProvider, actionHandlerProvider)
         "image" -> ImageView(viewContent, modifier, customContentDataProvider)
         "video" -> VideoView(viewContent, modifier, customContentDataProvider)
         "webView" -> WebView(
@@ -200,32 +245,76 @@ private fun AppstentViewContent(
         "disclosureGroup" -> DisclosureGroupView(viewContent, modifier, navController, customContentDataProvider, actionHandlerProvider)
         "menu" -> MenuView(viewContent, modifier, navController, customContentDataProvider, actionHandlerProvider)
         "progressView" -> ProgressView(viewContent, modifier, customContentDataProvider)
-        "custom" -> ModuleConfigs.customContentViewProvider?.CustomComposable(viewContent.getString(keyName = "customViewName"))
+        "custom" -> {
+            val context = LocalContext.current
+            ModuleConfigs.customContentViewProvider?.CustomComposable(
+                ModuleConfigs.CustomContentViewContext(
+                    viewContent = viewContent,
+                    viewName = viewContent.getString(keyName = "customViewName"),
+                    modifier = modifier.getModifier(viewContent, context, customContentDataProvider),
+                    customContentDataProvider = customContentDataProvider,
+                    actionHandlerProvider = actionHandlerProvider,
+                ),
+            )
+        }
         "navigationView" -> NavigationApstentView(viewContent, modifier, customContentDataProvider, actionHandlerProvider)
         "navigationLink" -> NavigationApstentLink(viewContent, modifier, navController, customContentDataProvider, actionHandlerProvider)
     }
 }
 
-private fun Modifier.getTapHandlerModifier(
-    viewContent: JSONObject,
+private fun JSONObject.appstentActionDescriptor(): AppstentActionDescriptor? {
+    val name = optString(keyName = "tapHandlerName", fallback = "")
+    if (name.isBlank()) return null
+
+    return AppstentActionDescriptor(
+        name = name,
+        data = if (has(keyName = "tapHandlerData")) {
+            getJSONObject(keyName = "tapHandlerData")
+        } else {
+            null
+        },
+    )
+}
+
+private fun Modifier.appstentClickableAction(
+    actions: List<AppstentActionDescriptor>,
     actionHandlerProvider: ActionHandlerProvider?
 ): Modifier {
-    val handlerName = viewContent.optString(keyName = "tapHandlerName", fallback = "")
-
-    if (handlerName.isEmpty()) {
+    if (actions.isEmpty()) {
         return this
     }
 
-    val handlerData = if (viewContent.has(keyName = "tapHandlerData")) {
-        viewContent.getJSONObject(keyName = "tapHandlerData")
-    } else {
-        null
+    return this.clickable {
+        dispatchAppstentActions(actions, actionHandlerProvider)
+    }
+}
+
+private fun dispatchAppstentActions(
+    actions: List<AppstentActionDescriptor>,
+    actionHandlerProvider: ActionHandlerProvider?,
+) {
+    actions.forEach { action ->
+        dispatchAppstentAction(
+            handlerName = action.name,
+            data = action.data,
+            localHandler = actionHandlerProvider,
+            globalHandler = ModuleConfigs.globalActionHandlerProvider,
+        )
+    }
+}
+
+internal fun dispatchAppstentAction(
+    handlerName: String,
+    data: JSONObject?,
+    localHandler: ActionHandlerProvider?,
+    globalHandler: ActionHandlerProvider?,
+) {
+    if (handlerName.isBlank()) {
+        return
     }
 
-    return this.clickable {
-        actionHandlerProvider?.handleTap(handlerName, handlerData)
-        ModuleConfigs.globalActionHandlerProvider?.handleTap(handlerName, handlerData)
-    }
+    localHandler?.handleTap(handlerName, data)
+    globalHandler?.handleTap(handlerName, data)
 }
 
 private fun isVisible(viewContent: JSONObject, customContentDataProvider: CustomContentDataProvider? = null) : Boolean {
@@ -642,15 +731,24 @@ private fun AnnotatedString.Builder.appendMarkdownNode(
 fun LinkView(
     viewContent: JSONObject,
     modifier: Modifier = Modifier,
-    customContentDataProvider: CustomContentDataProvider? = null
+    customContentDataProvider: CustomContentDataProvider? = null,
+    actionHandlerProvider: ActionHandlerProvider? = null,
 ) {
     val uriHandler = LocalUriHandler.current
     val url = viewContent.optString(keyName = "url", fallback = "")
+    val actions = LocalAncestorAppstentActions.current
 
     TextView(
         viewContent = viewContent,
-        modifier = if (url.isNotEmpty()) {
-            modifier.clickable { uriHandler.openUri(url) }
+        modifier = if (url.isNotEmpty() || actions.isNotEmpty()) {
+            modifier.clickable(
+                enabled = viewContent.optBoolean(keyName = "isEnabled", fallback = true),
+            ) {
+                dispatchAppstentActions(actions, actionHandlerProvider)
+                if (url.isNotEmpty()) {
+                    uriHandler.openUri(url)
+                }
+            }
         } else {
             modifier
         },
@@ -667,6 +765,8 @@ fun DisclosureGroupView(
     actionHandlerProvider: ActionHandlerProvider? = null
 ) {
     val context = LocalContext.current
+    val ancestorActions = LocalAncestorAppstentActions.current
+    val labelViews = viewContent.getJSONArray(keyName = "label")
     var expanded by remember(viewContent) {
         mutableStateOf(
             if (viewContent.has(keyName = "isExpanded")) {
@@ -681,15 +781,22 @@ fun DisclosureGroupView(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { expanded = !expanded },
+                .clickable {
+                    val labelActions = (0 until labelViews.length()).mapNotNull { index ->
+                        labelViews.getJSONObject(index).appstentActionDescriptor()
+                    }
+                    dispatchAppstentActions(labelActions + ancestorActions, actionHandlerProvider)
+                    expanded = !expanded
+                },
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(modifier = Modifier.weight(1f)) {
                 RenderViewContentArray(
-                    views = viewContent.getJSONArray(keyName = "label"),
+                    views = labelViews,
                     navController = navController,
                     customContentDataProvider = customContentDataProvider,
-                    actionHandlerProvider = actionHandlerProvider
+                    actionHandlerProvider = actionHandlerProvider,
+                    handlesTapActions = false,
                 )
             }
 
@@ -733,14 +840,29 @@ fun MenuView(
             onDismissRequest = { expanded = false }
         ) {
             (0 until views.length()).forEach {
+                val menuItem = views.getJSONObject(it)
                 DropdownMenuItem(
-                    onClick = { expanded = false }
+                    enabled = menuItem.optBoolean(keyName = "isEnabled", fallback = true),
+                    onClick = {
+                        expanded = false
+                        dispatchAppstentAction(
+                            handlerName = menuItem.optString(keyName = "tapHandlerName", fallback = ""),
+                            data = if (menuItem.has(keyName = "tapHandlerData")) {
+                                menuItem.getJSONObject(keyName = "tapHandlerData")
+                            } else {
+                                null
+                            },
+                            localHandler = actionHandlerProvider,
+                            globalHandler = ModuleConfigs.globalActionHandlerProvider,
+                        )
+                    }
                 ) {
                     AppstentView(
-                        viewContent = views.getJSONObject(it),
+                        viewContent = menuItem,
                         navController = navController,
                         customContentDataProvider = customContentDataProvider,
-                        actionHandlerProvider = actionHandlerProvider
+                        actionHandlerProvider = actionHandlerProvider,
+                        handlesTapActions = false,
                     )
                 }
             }
@@ -844,7 +966,8 @@ private fun RenderViewContentArray(
     modifier: Modifier = Modifier,
     navController: NavHostController? = null,
     customContentDataProvider: CustomContentDataProvider? = null,
-    actionHandlerProvider: ActionHandlerProvider? = null
+    actionHandlerProvider: ActionHandlerProvider? = null,
+    handlesTapActions: Boolean = true,
 ) {
     Column(modifier = modifier) {
         (0 until views.length()).forEach {
@@ -852,7 +975,8 @@ private fun RenderViewContentArray(
                 viewContent = views.getJSONObject(it),
                 navController = navController,
                 customContentDataProvider = customContentDataProvider,
-                actionHandlerProvider = actionHandlerProvider
+                actionHandlerProvider = actionHandlerProvider,
+                handlesTapActions = handlesTapActions,
             )
         }
     }
@@ -1417,12 +1541,6 @@ fun StackView(
     } else {
         appstentModifier
     }
-    val columnModifier: Modifier = if (scrollable) {
-        columnBaseModifier.verticalScroll(rememberScrollState())
-    } else {
-        columnBaseModifier
-    }
-
     val rowBaseModifier = if (arrangement.isNotEmpty() && !scrollable) {
         appstentModifier.fillMaxWidth()
     } else {
@@ -1489,23 +1607,38 @@ fun StackView(
                 alignmentVal = getHorizontalAlignment(alignmentString)
             }
 
-            Column(modifier = columnModifier,
-                verticalArrangement = verticalArrangement) {
-                (0 until views.length()).forEach {
-                    val viewContentIt = views.getJSONObject(it)
-                    var itemModifier: Modifier = Modifier.align(alignmentVal)
+            val inheritedScrollableParent = LocalVerticallyScrollableAppstentParent.current
+            val appliesVerticalScroll = shouldApplyVerticalScroll(
+                viewContent = viewContent,
+                isInsideVerticalScroller = inheritedScrollableParent,
+            )
+            val resolvedColumnModifier = if (appliesVerticalScroll) {
+                columnBaseModifier.verticalScroll(rememberScrollState())
+            } else {
+                columnBaseModifier
+            }
+            CompositionLocalProvider(
+                LocalVerticallyScrollableAppstentParent provides
+                    (appliesVerticalScroll || inheritedScrollableParent),
+            ) {
+                Column(modifier = resolvedColumnModifier,
+                    verticalArrangement = verticalArrangement) {
+                    (0 until views.length()).forEach {
+                        val viewContentIt = views.getJSONObject(it)
+                        var itemModifier: Modifier = Modifier.align(alignmentVal)
 
-                    if (viewContentIt.optString("type") == "spacer") {
-                        if (!viewContentIt.has("minLength") && !viewContentIt.has("width") && !viewContentIt.has("height")) {
-                            itemModifier = itemModifier.weight(1f)
+                        if (viewContentIt.optString("type") == "spacer") {
+                            if (!viewContentIt.has("minLength") && !viewContentIt.has("width") && !viewContentIt.has("height")) {
+                                itemModifier = itemModifier.weight(1f)
+                            }
                         }
-                    }
 
-                    AppstentView(viewContent = viewContentIt,
-                        itemModifier,
-                        navController,
-                        customContentDataProvider,
-                        actionHandlerProvider)
+                        AppstentView(viewContent = viewContentIt,
+                            itemModifier,
+                            navController,
+                            customContentDataProvider,
+                            actionHandlerProvider)
+                    }
                 }
             }
         }
@@ -1658,6 +1791,7 @@ fun GridView(
     val gridCells: GridCells = getGridCells(viewContent)
 
     val gridType = viewContent.optString(keyName = "gridType", "vertical")
+    val isInsideVerticalScroller = LocalVerticallyScrollableAppstentParent.current
     val gridModifier = modifier.getViewportContainerModifier(
         viewContent,
         context,
@@ -1674,6 +1808,14 @@ fun GridView(
                 AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider, actionHandlerProvider)
             }
         }
+    } else if (isInsideVerticalScroller && !viewContent.has(keyName = "height")) {
+        IntrinsicVerticalGrid(
+            viewContent = viewContent,
+            modifier = modifier.getModifier(viewContent, context, customContentDataProvider),
+            navController = navController,
+            customContentDataProvider = customContentDataProvider,
+            actionHandlerProvider = actionHandlerProvider,
+        )
     } else {
         LazyVerticalGrid(columns = gridCells,
             modifier = gridModifier,
@@ -1684,6 +1826,112 @@ fun GridView(
                 AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider, actionHandlerProvider)
             }
         }
+    }
+}
+
+@Composable
+private fun IntrinsicVerticalGrid(
+    viewContent: JSONObject,
+    modifier: Modifier,
+    navController: NavHostController?,
+    customContentDataProvider: CustomContentDataProvider?,
+    actionHandlerProvider: ActionHandlerProvider?,
+) {
+    val views = viewContent.getJSONArray(keyName = "views")
+    val rowSpacing = viewContent.appstentResolvedDouble(keyName = "rowSpacing", fallback = 0.0).dp
+    val columnSpacing = viewContent.appstentResolvedDouble(keyName = "colSpacing", fallback = 0.0).dp
+
+    Layout(
+        modifier = modifier,
+        content = {
+            (0 until views.length()).forEach { index ->
+                AppstentView(
+                    viewContent = views.getJSONObject(index),
+                    navController = navController,
+                    customContentDataProvider = customContentDataProvider,
+                    actionHandlerProvider = actionHandlerProvider,
+                )
+            }
+        },
+    ) { measurables, constraints ->
+        val availableWidth = if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.minWidth
+        val columnSpacingPx = columnSpacing.roundToPx()
+        val rowSpacingPx = rowSpacing.roundToPx()
+        val trackSizes = calculateIntrinsicVerticalGridTrackSizes(
+            viewContent = viewContent,
+            availableSize = availableWidth,
+            spacing = columnSpacingPx,
+            density = density,
+        ).ifEmpty { listOf(availableWidth) }
+
+        val placeables = measurables.mapIndexed { index, measurable ->
+            val trackWidth = trackSizes[index % trackSizes.size]
+            measurable.measure(
+                androidx.compose.ui.unit.Constraints(
+                    minWidth = trackWidth,
+                    maxWidth = trackWidth,
+                    minHeight = 0,
+                    maxHeight = androidx.compose.ui.unit.Constraints.Infinity,
+                ),
+            )
+        }
+        val rowCount = if (placeables.isEmpty()) 0 else
+            (placeables.size + trackSizes.size - 1) / trackSizes.size
+        val rowHeights = List(rowCount) { row ->
+            val start = row * trackSizes.size
+            val end = min(start + trackSizes.size, placeables.size)
+            (start until end).maxOfOrNull { placeables[it].height } ?: 0
+        }
+        val contentHeight = rowHeights.sum() + rowSpacingPx * max(0, rowCount - 1)
+        val layoutWidth = (
+            trackSizes.sum() + columnSpacingPx * max(0, trackSizes.size - 1)
+        ).coerceIn(constraints.minWidth, constraints.maxWidth)
+        val layoutHeight = contentHeight.coerceIn(constraints.minHeight, constraints.maxHeight)
+
+        layout(layoutWidth, layoutHeight) {
+            val columnOffsets = trackSizes.runningFold(0) { offset, width ->
+                offset + width + columnSpacingPx
+            }
+            val rowOffsets = rowHeights.runningFold(0) { offset, height ->
+                offset + height + rowSpacingPx
+            }
+            placeables.forEachIndexed { index, placeable ->
+                placeable.placeRelative(
+                    x = columnOffsets[index % trackSizes.size],
+                    y = rowOffsets[index / trackSizes.size],
+                )
+            }
+        }
+    }
+}
+
+internal fun calculateIntrinsicVerticalGridTrackSizes(
+    viewContent: JSONObject,
+    availableSize: Int,
+    spacing: Int,
+    density: Float,
+): List<Int> {
+    if (viewContent.has(keyName = "minCellWidth")) {
+        val minimumWidth = max(
+            1,
+            (viewContent.appstentResolvedDouble(keyName = "minCellWidth") * density).toInt(),
+        )
+        val count = max(1, (availableSize + spacing) / (minimumWidth + max(0, spacing)))
+        val availableForCells = max(0, availableSize - max(0, spacing) * (count - 1))
+        return List(count) { availableForCells / count }
+    }
+
+    if (viewContent.has(keyName = "numColumns")) {
+        val count = max(1, viewContent.appstentResolvedInt(keyName = "numColumns", fallback = 1))
+        val availableForCells = max(0, availableSize - max(0, spacing) * (count - 1))
+        return List(count) { availableForCells / count }
+    }
+
+    val trackSpecs = resolveGridTrackSpecs(viewContent.getJSONArray(keyName = "columns"))
+    return if (trackSpecs.isEmpty()) {
+        listOf(availableSize)
+    } else {
+        calculateGridTrackSizes(trackSpecs, availableSize, spacing, density)
     }
 }
 
@@ -2001,6 +2249,23 @@ fun NavigationApstentView(
                 )
             }
 
+            composable(RemoteIncludedDestinationPattern) { backStackEntry ->
+                val source = decodeRemoteIncludedSource(
+                    backStackEntry.arguments?.getString(RemoteIncludedSourceArgument),
+                )
+
+                if (source != null) {
+                    IncludedView(
+                        viewContent = JSONObject()
+                            .put("type", "included")
+                            .put("source", source),
+                        navController = navController,
+                        customContentDataProvider = customContentDataProvider,
+                        actionHandlerProvider = actionHandlerProvider,
+                    )
+                }
+            }
+
             // Crawl through the view hierarchy to create composables for routes.
             navigationComposable(viewContent, this, customContentDataProvider, actionHandlerProvider)
         }
@@ -2068,7 +2333,15 @@ private fun navigationComposable(
                 val viewName = viewContentIt.getString(keyName = "customViewName")
 
                 navGraphBuilder.composable(viewName) {
-                    ModuleConfigs.customContentViewProvider?.CustomComposable(viewName)
+                    ModuleConfigs.customContentViewProvider?.CustomComposable(
+                        ModuleConfigs.CustomContentViewContext(
+                            viewContent = viewContentIt,
+                            viewName = viewName,
+                            modifier = Modifier,
+                            customContentDataProvider = customContentDataProvider,
+                            actionHandlerProvider = actionHandlerProvider,
+                        ),
+                    )
                 }
             }
             else if (viewContentIt.has(keyName = "route")) {
@@ -2105,10 +2378,14 @@ fun NavigationApstentLink(
     actionHandlerProvider: ActionHandlerProvider? = null
 ) {
 
+    val context = LocalContext.current
     val triggerView = viewContent.getJSONObject(keyName = "triggerView")
+    val actions = LocalAncestorAppstentActions.current
 
-    val route: String = if (viewContent.optString(keyName = "routeType", "") == "custom" &&
-        viewContent.has(keyName = "customViewName")) {
+    val isCustomRoute = viewContent.optString(keyName = "routeType", "") == "custom" &&
+        viewContent.has(keyName = "customViewName")
+
+    val route: String = if (isCustomRoute) {
 
         viewContent.getString(keyName = "customViewName")
     }
@@ -2117,11 +2394,44 @@ fun NavigationApstentLink(
     }
 
     val navLinkModifier = modifier
-        .clickable {
-            navController?.navigate(route)
+        .getModifier(viewContent, context, customContentDataProvider)
+        .clickable(
+            enabled = viewContent.optBoolean(keyName = "isEnabled", fallback = true),
+        ) {
+            dispatchAppstentActions(actions, actionHandlerProvider)
+            if (route.isNotBlank()) {
+                val destination = if (isCustomRoute) {
+                    route
+                } else {
+                    remoteIncludedDestination(route)
+                }
+                navController?.navigate(destination)
+            }
         }
 
     AppstentView(viewContent = triggerView, navLinkModifier, navController, customContentDataProvider, actionHandlerProvider)
+}
+
+private const val RemoteIncludedDestination = "__appstent_remote_included__"
+private const val RemoteIncludedSourceArgument = "source"
+private const val RemoteIncludedDestinationPattern =
+    "$RemoteIncludedDestination/{$RemoteIncludedSourceArgument}"
+
+internal fun remoteIncludedDestination(source: String): String {
+    val encodedSource = Base64.getUrlEncoder()
+        .withoutPadding()
+        .encodeToString(source.toByteArray(Charsets.UTF_8))
+    return "$RemoteIncludedDestination/$encodedSource"
+}
+
+internal fun decodeRemoteIncludedSource(encodedSource: String?): String? {
+    if (encodedSource.isNullOrBlank()) {
+        return null
+    }
+
+    return runCatching {
+        String(Base64.getUrlDecoder().decode(encodedSource), Charsets.UTF_8)
+    }.getOrNull()
 }
 
 @Composable

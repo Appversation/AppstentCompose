@@ -17,6 +17,16 @@ import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.accessibilityClassName
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
@@ -43,6 +53,90 @@ fun Modifier.getModifier(
         .getBorderModifier(modifierContent, context, customContentDataProvider)
         .getPreviewSelectionInputModifier(modifierContent)
         .getPreviewSelectionModifier(modifierContent)
+        .getAccessibilityModifier(modifierContent)
+}
+
+internal data class AppstentAccessibilityConfiguration(
+    val label: String,
+    val hint: String,
+    val identifier: String,
+    val role: String,
+    val traits: List<String>,
+    val isEnabled: Boolean,
+    val isDecorative: Boolean,
+) {
+    val spokenDescription: String
+        get() = listOf(label, hint).filter { it.isNotBlank() }.joinToString(". ")
+}
+
+internal fun resolveAccessibilityConfiguration(
+    viewContent: JSONObject,
+): AppstentAccessibilityConfiguration {
+    val traits = viewContent
+        .optPlatformValue("accessibilityTraits")
+        .let { it as? org.json.JSONArray }
+        ?.let { array ->
+            (0 until array.length()).mapNotNull { index ->
+                array.optString(index).takeIf(String::isNotBlank)
+            }
+        }
+        ?: emptyList()
+
+    return AppstentAccessibilityConfiguration(
+        label = viewContent.optString(keyName = "accessibilityLabel", fallback = ""),
+        hint = viewContent.optString(keyName = "accessibilityHint", fallback = ""),
+        identifier = viewContent.optString(keyName = "accessibilityIdentifier", fallback = ""),
+        role = viewContent.optString(keyName = "accessibilityRole", fallback = ""),
+        traits = traits,
+        isEnabled = viewContent.optBoolean(keyName = "isEnabled", fallback = true),
+        isDecorative = viewContent.optBoolean(keyName = "isDecorative", fallback = false),
+    )
+}
+
+fun Modifier.getAccessibilityModifier(viewContent: JSONObject): Modifier {
+    val configuration = resolveAccessibilityConfiguration(viewContent)
+
+    if (configuration.isDecorative) {
+        return clearAndSetSemantics { }
+    }
+
+    val semanticNames = listOf(configuration.role) + configuration.traits
+    var result = this
+
+    if (configuration.identifier.isNotBlank()) {
+        result = result.testTag(configuration.identifier)
+    }
+
+    return result.semantics {
+        if (configuration.spokenDescription.isNotBlank()) {
+            contentDescription = configuration.spokenDescription
+        }
+        if (!configuration.isEnabled) {
+            disabled()
+        }
+        if ("header" in semanticNames) {
+            heading()
+        }
+        if ("selected" in semanticNames) {
+            selected = true
+        }
+        if ("link" in semanticNames) {
+            // Compose has no Link role. A clickable TextView is Android's native
+            // accessibility representation for a standalone text link and avoids
+            // announcing authored links as buttons.
+            accessibilityClassName = android.widget.TextView::class.java.name
+        }
+
+        val resolvedRole = when {
+            "button" in semanticNames -> Role.Button
+            "image" in semanticNames -> Role.Image
+            "toggle" in semanticNames -> Role.Switch
+            else -> null
+        }
+        if (resolvedRole != null) {
+            role = resolvedRole
+        }
+    }
 }
 
 fun Modifier.getPreviewSelectionInputModifier(modifierContent: JSONObject) : Modifier {

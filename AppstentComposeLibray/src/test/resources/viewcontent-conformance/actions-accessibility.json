@@ -1,0 +1,81 @@
+{
+  "type": "vStack",
+  "spacing": 12,
+  "accessibilityLabel": "Phase 3 interaction examples",
+  "accessibilityIdentifier": "phase3.root",
+  "views": [
+    {
+      "type": "link",
+      "text": "Documentation",
+      "url": "https://appstent.com/docs",
+      "tapHandlerName": "linkAction",
+      "accessibilityLabel": "Open documentation",
+      "accessibilityHint": "Opens the documentation website",
+      "accessibilityRole": "link",
+      "isEnabled": true
+    },
+    {
+      "type": "navigationLink",
+      "routeType": "custom",
+      "customViewName": "profile",
+      "tapHandlerName": "navigationAction",
+      "accessibilityIdentifier": "navigation.profile",
+      "accessibilityRole": "link",
+      "triggerView": {
+        "type": "text",
+        "text": "Profile"
+      }
+    },
+    {
+      "type": "menu",
+      "title": "Actions",
+      "views": [
+        {
+          "type": "text",
+          "text": "Save",
+          "tapHandlerName": "saveAction",
+          "tapHandlerData": {
+            "origin": "menu"
+          },
+          "accessibilityRole": "button"
+        }
+      ]
+    },
+    {
+      "type": "disclosureGroup",
+      "isExpanded": false,
+      "label": [
+        {
+          "type": "text",
+          "text": "Details",
+          "tapHandlerName": "disclosureLabelAction"
+        }
+      ],
+      "content": [
+        {
+          "type": "text",
+          "text": "Additional details"
+        }
+      ]
+    },
+    {
+      "type": "custom",
+      "customViewName": "phase3Card",
+      "customPayload": {
+        "accountID": "example"
+      },
+      "tapHandlerName": "customAction",
+      "accessibilityLabel": "Account card",
+      "accessibilityHint": "Opens the account",
+      "accessibilityRole": "button",
+      "accessibilityTraits": ["selected"],
+      "isEnabled": true
+    },
+    {
+      "type": "image",
+      "sourceType": "system",
+      "source": "star.fill",
+      "isDecorative": true
+    }
+  ]
+}

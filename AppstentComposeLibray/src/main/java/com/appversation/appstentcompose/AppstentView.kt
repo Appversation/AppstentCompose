@@ -171,8 +171,8 @@ fun AppstentView(
                 modifier
             }
             val descendantActions = ownAction?.let { listOf(it) + ancestorActions } ?: ancestorActions
-            val overlayView = if (viewContent.has(keyName = "overlay_view")) {
-                viewContent.getJSONObject(keyName = "overlay_view")
+            val overlayView = if (viewContent.has(keyName = "overlayView")) {
+                viewContent.getJSONObject(keyName = "overlayView")
             } else {
                 null
             }
@@ -549,8 +549,8 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customConte
     }
 
     //Text alignment
-    val textAlignment = if (viewContent.has(keyName = "text_alignment")) {
-        getTextAlignment(viewContent.optString(keyName = "text_alignment", "leading"))
+    val textAlignment = if (viewContent.has(keyName = "textAlignment")) {
+        getTextAlignment(viewContent.optString(keyName = "textAlignment", "leading"))
     } else {
         TextAlign.Start
     }
@@ -770,9 +770,9 @@ fun DisclosureGroupView(
     var expanded by remember(viewContent) {
         mutableStateOf(
             if (viewContent.has(keyName = "isExpanded")) {
-                viewContent.optBoolean(keyName = "isExpanded", fallback = true)
+                viewContent.optBoolean(keyName = "isExpanded", fallback = false)
             } else {
-                true
+                false
             }
         )
     }
@@ -2188,10 +2188,10 @@ internal data class ListStyleBehavior(
 
 internal fun resolveListStyleBehavior(viewContent: JSONObject): ListStyleBehavior =
     when (viewContent.optString("listStyle", fallback = "plainListStyle")) {
-        "sidebarListStyle" -> ListStyleBehavior(ListStyleKind.Sidebar, 12, 8, 8, 8, false)
-        "insetListStyle" -> ListStyleBehavior(ListStyleKind.Inset, 16, 8, 6, 0, true)
-        "groupedListStyle" -> ListStyleBehavior(ListStyleKind.Grouped, 0, 12, 8, 20, false)
-        "insetGroupedListStyle" -> ListStyleBehavior(ListStyleKind.InsetGrouped, 16, 12, 8, 20, false)
+        "sidebar", "sidebarListStyle" -> ListStyleBehavior(ListStyleKind.Sidebar, 12, 8, 8, 8, false)
+        "inset", "insetListStyle" -> ListStyleBehavior(ListStyleKind.Inset, 16, 8, 6, 0, true)
+        "grouped", "groupedListStyle" -> ListStyleBehavior(ListStyleKind.Grouped, 0, 12, 8, 20, false)
+        "insetGrouped", "insetGroupedListStyle" -> ListStyleBehavior(ListStyleKind.InsetGrouped, 16, 12, 8, 20, false)
         else -> ListStyleBehavior(ListStyleKind.Plain, 0, 0, 6, 0, true)
     }
 

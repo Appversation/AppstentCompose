@@ -391,6 +391,10 @@ class ViewSpecificBehaviorTest {
         assertTrue(resolveListStyleBehavior(JSONObject().put("listStyle", "plainListStyle")).showsDividers)
         assertFalse(resolveListStyleBehavior(JSONObject().put("listStyle", "groupedListStyle")).showsDividers)
         assertEquals(
+            ListStyleKind.Grouped,
+            resolveListStyleBehavior(JSONObject().put("listStyle", "grouped")).kind,
+        )
+        assertEquals(
             16,
             resolveListStyleBehavior(JSONObject().put("listStyle", "insetGroupedListStyle")).horizontalInset,
         )

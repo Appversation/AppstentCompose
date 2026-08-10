@@ -336,12 +336,7 @@ internal fun JSONObject.appstentResolvedInt(
 ): Int = appstentResolvedDouble(keyName, fallback.toDouble(), resolver).toInt()
 
 private fun JSONObject.appstentRawValue(keyName: String): Any? {
-    val androidValue = opt("android:$keyName")
-    if (androidValue != null && androidValue != JSONObject.NULL) {
-        return androidValue
-    }
-
-    val value = opt(keyName)
+    val value = optPlatformValue(keyName)
     if (value != null && value != JSONObject.NULL) {
         return value
     }

@@ -1,10 +1,28 @@
 {
-  "contractVersion": "0.1.0",
+  "contractVersion": "1.0.0",
   "defaultViewport": {
     "width": 390,
     "height": 844
   },
   "fixtures": [
+    {
+      "id": "schema-evolution",
+      "file": "schema-evolution.json",
+      "concern": "version metadata, recursive required fields, camelCase aliases, semantic values, and token-capable integer and rotation properties",
+      "baselinePolicy": "structural-only",
+      "assertions": [
+        { "path": "/schemaVersion", "equals": "1.0.0" },
+        { "path": "/minimumSDKVersions/ios", "equals": "2.0.0" },
+        { "path": "/requiredCapabilities/0", "equals": "schema-evolution" },
+        { "path": "/views/0/textAlignment", "equals": "center" },
+        { "path": "/views/0/percentWidth", "equals": 0.75 },
+        { "path": "/views/1/scalingMode", "absent": true },
+        { "path": "/views/2/numColumns", "equals": "{layout.grid.columns}" },
+        { "path": "/views/3/listStyle", "equals": "plain" },
+        { "path": "/views/4/rotationAngle", "equals": "{motion.pager.rotation}" },
+        { "path": "/overlayView/type", "equals": "text" }
+      ]
+    },
     {
       "id": "schema-parity",
       "file": "schema-parity.json",

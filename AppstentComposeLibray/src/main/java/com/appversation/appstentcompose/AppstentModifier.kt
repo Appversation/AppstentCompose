@@ -312,17 +312,17 @@ fun Modifier.getFrameSizeModifier(modifierContent: JSONObject) : Modifier {
             modifier = modifier.requiredHeight(height.dp)
         }
 
-        if (!modifierContent.has(keyName = "width") && modifierContent.has(keyName = "percent_width")) {
+        if (!modifierContent.has(keyName = "width") && modifierContent.has(keyName = "percentWidth")) {
             val widthFraction = modifierContent
-                .appstentResolvedDouble(keyName = "percent_width")
+                .appstentResolvedDouble(keyName = "percentWidth")
                 .coerceAtLeast(0.0)
                 .toFloat()
             modifier = modifier.fillMaxWidth(widthFraction)
         }
 
-        if (!modifierContent.has(keyName = "height") && modifierContent.has(keyName = "percent_height")) {
+        if (!modifierContent.has(keyName = "height") && modifierContent.has(keyName = "percentHeight")) {
             val heightFraction = modifierContent
-                .appstentResolvedDouble(keyName = "percent_height")
+                .appstentResolvedDouble(keyName = "percentHeight")
                 .coerceAtLeast(0.0)
                 .toFloat()
             modifier = modifier.fillMaxHeight(heightFraction)

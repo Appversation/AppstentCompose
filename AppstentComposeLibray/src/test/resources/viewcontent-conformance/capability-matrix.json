@@ -1,9 +1,10 @@
 {
-  "contractVersion": "0.1.0",
+  "contractVersion": "1.0.0",
   "sdkVersions": {
     "AppstentUI@2.0": {
       "platform": "ios",
       "capabilities": {
+        "schema-evolution": "conformant",
         "schema-parity": "conformant",
         "frame-background-order": "conformant",
         "text-alignment": "conformant",
@@ -31,6 +32,7 @@
     "AppstentCompose@1.7.1": {
       "platform": "android",
       "capabilities": {
+        "schema-evolution": "conformant",
         "schema-parity": "conformant",
         "frame-background-order": "conformant",
         "text-alignment": "conformant",

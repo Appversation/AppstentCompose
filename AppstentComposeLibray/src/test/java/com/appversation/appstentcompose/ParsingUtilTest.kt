@@ -8,6 +8,22 @@ import org.junit.Test
 
 class ParsingUtilTest {
     @Test
+    fun camelCasePropertiesTakePrecedenceOverLegacyAliases() {
+        val sharedDescriptor = JSONObject()
+            .put("textAlignment", "center")
+            .put("text_alignment", "trailing")
+            .put("percent_width", 0.25)
+        val overriddenDescriptor = JSONObject()
+            .put("android:textAlignment", "center")
+            .put("android:text_alignment", "trailing")
+
+        assertEquals("center", sharedDescriptor.optString("text_alignment", fallback = "leading"))
+        assertEquals("center", overriddenDescriptor.optString("textAlignment", fallback = "leading"))
+        assertEquals(0.25, sharedDescriptor.optDouble("percentWidth", fallback = 0.0), 0.0)
+        assertTrue(sharedDescriptor.has(keyName = "percentWidth"))
+    }
+
+    @Test
     fun optBooleanReturnsRequestedFallbackWhenKeyIsMissing() {
         val descriptor = JSONObject()
 

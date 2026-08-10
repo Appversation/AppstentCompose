@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "1.0.0",
+  "minimumSDKVersions": {
+    "ios": "2.0.0",
+    "android": "1.7.1"
+  },
+  "requiredCapabilities": [
+    "schema-evolution"
+  ],
+  "type": "vStack",
+  "spacing": 12,
+  "views": [
+    {
+      "type": "text",
+      "text": "Versioned ViewContent",
+      "textAlignment": "center",
+      "percentWidth": 0.75,
+      "shadow": {
+        "color": "#66000000",
+        "radius": 6,
+        "spread": 3
+      }
+    },
+    {
+      "type": "image",
+      "source": "https://example.com/phase-4.png",
+      "sourceType": "remote"
+    },
+    {
+      "type": "grid",
+      "gridType": "vertical",
+      "numColumns": "{layout.grid.columns}",
+      "width": 320,
+      "height": 180,
+      "views": [
+        {
+          "type": "text",
+          "text": "Token-sized grid"
+        }
+      ]
+    },
+    {
+      "type": "list",
+      "listStyle": "plain",
+      "width": 320,
+      "height": 180,
+      "views": [
+        {
+          "type": "text",
+          "text": "Semantic list style"
+        }
+      ]
+    },
+    {
+      "type": "tabbedView",
+      "tabStyle": "pageStyle",
+      "rotationAngle": "{motion.pager.rotation}",
+      "width": 320,
+      "height": 180,
+      "tabs": [
+        {
+          "title": "One",
+          "tabContent": {
+            "type": "text",
+            "text": "Token-capable rotation"
+          }
+        }
+      ]
+    }
+  ],
+  "overlayView": {
+    "type": "text",
+    "text": "v1"
+  }
+}

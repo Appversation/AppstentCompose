@@ -3,14 +3,14 @@
   "algorithm": "sha256",
   "schema": {
     "file": "Shared/ViewContent.schema.json",
-    "sha256": "0423d8e6b4c8f1972ceec19d00cb94f166a9c109ab410311d4bf4d335d01d5d2"
+    "sha256": "6a33ab0e0aae7a7e113e342891296ac0bae571fa9e09951df660c200201c15b7"
   },
   "files": {
     "actions-accessibility.json": "2114c349acd57f29a5b29c3e22b83d2ae6e43f1373db09731db7bf3a95472f38",
     "arranged-stacks-finite-bounds.json": "55263e03aca16cbcc7c432d442349416e031041a75dc90fbd0507d2d76b97117",
     "bounded-horizontal-grid.json": "a769e0b653a939c0752ab90b47e3f117f9c5d1450cf38bd6eb8084bcc5688e69",
     "bounded-vertical-grid.json": "5ddc6dc9212fec5f8b621f69b7e0b6405b98bfe1fd50b388cbfa9f90cb1d85b2",
-    "capability-matrix.json": "b20ab7e4effabb289169ee71293989fee7f7d2c156822a830565440c5aa428fd",
+    "capability-matrix.json": "c812c7f74fab36a8115e24f361bfd5cb4db3df83d9201448c073096afe5a5582",
     "fill-modifier-sizing.json": "e5ba66b206476c6c4287aaf444ebb271e100d1cda1bf06aa3bb996698e0638b5",
     "frame-background-order.json": "52d2b1232331807a9e51eebb115e16ccfa2d4666586aab753160907df188e36b",
     "grid-item-bounds.json": "9d8df39f98368d43a900f7aa1c2b37e3cc38f2bbd16d7b6117b5e47342cf6d37",
@@ -20,7 +20,7 @@
     "intrinsic-stacks.json": "9c86622824f263794ea9f9c0f009619098c877bbce8113e41bc36cc18032cdca",
     "list-styles.json": "87a8ba5a9a66cd856889532079e91045fb644973d78c2a27659af0409a7a8374",
     "list-viewport-sizing.json": "69ab61267b6bec01280a2c693c5b6654bc7ea2a5452eca07b05ef9406ab7ca71",
-    "manifest.json": "591daba97e02ba1ef389fd74e587ec163b2c529686ce4803791e0da09811a12c",
+    "manifest.json": "59e418d3b209bc0015f7b5485e65b377be51185ace6e19c710c778ab3566bc4f",
     "media-flags.json": "aae5f9da12ce75888b7b8f446006e6d4a6f214e79febcaf20705aa0127c4e527",
     "navigation.json": "11079b6d77b7699ff6d059c18a4c3c7dc9d67f6fc0a8873593ca711effb71642",
     "relative-sizing.json": "86c18e9f2eb9bbfed838106a7fcc28426e5ccf51785e71c820504f848ebaedd6",

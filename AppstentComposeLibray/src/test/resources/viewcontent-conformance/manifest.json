@@ -4,6 +4,13 @@
     "width": 390,
     "height": 844
   },
+  "previewAppComparison": {
+    "mode": "side-by-side",
+    "referenceRenderers": ["native", "flutter"],
+    "eligibleBaselinePolicies": ["shared", "platform"],
+    "requiresLiveDocument": true,
+    "automated": false
+  },
   "fixtures": [
     {
       "id": "schema-evolution",

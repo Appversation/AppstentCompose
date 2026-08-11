@@ -29,7 +29,7 @@
         "navigation": "conformant"
       }
     },
-    "AppstentCompose@1.7.1": {
+    "AppstentCompose@1.10.0-rc.1": {
       "platform": "android",
       "capabilities": {
         "schema-evolution": "conformant",

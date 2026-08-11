@@ -1,6 +1,3 @@
-import groovy.xml.XmlNodePrinter
-import groovy.xml.XmlParser
-
 buildscript {
     repositories {
         mavenCentral()
@@ -13,11 +10,13 @@ plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
     id 'maven-publish'
-    // The following line is not strictly necessary but helps with JitPack compatibility
     id 'kotlin-android'
     id 'org.jetbrains.kotlin.plugin.compose'
     id 'com.android.compose.screenshot'
 }
+
+group = providers.gradleProperty('GROUP').get()
+version = providers.gradleProperty('VERSION_NAME').get()
 
 android {
     compileSdk 36
@@ -82,66 +81,13 @@ android {
     }
 }
 
-// Custom task to modify the generated POM file
-task modifyPom {
-    doLast {
-        def pomFile = file("${buildDir}/publications/release/pom-default.xml")
-        if (pomFile.exists() && pomFile.length() > 0) {
-            try {
-                def xml = new XmlParser().parse(pomFile)
-                if (xml.groupId.size() > 0) {
-                    xml.groupId[0].value = 'com.appversation'
-                }
-                if (xml.artifactId.size() > 0) {
-                    xml.artifactId[0].value = 'appstent-compose'
-                }
-                if (xml.version.size() > 0) {
-                    xml.version[0].value = '1.9.1'
-                }
-                
-                pomFile.withWriter { w ->
-                    new XmlNodePrinter(new PrintWriter(w)).print(xml)
-                }
-                println "Successfully modified POM file with correct values"
-            } catch (Exception e) {
-                println "Error modifying POM file: ${e.message}"
-            }
-        } else {
-            println "POM file does not exist or is empty: ${pomFile.absolutePath}"
-        }
-    }
-}
-
-// Make the modifyPom task depend on the generatePomFileForReleasePublication task
-tasks.whenTaskAdded { task ->
-    if (task.name == 'generatePomFileForReleasePublication') {
-        modifyPom.dependsOn task
-    }
-    if (task.name == 'publishReleasePublicationToMavenRepository') {
-        task.dependsOn modifyPom
-    }
-}
-
 afterEvaluate {
     publishing {
-        repositories {
-            // Only add GitHub Packages repository if not building through JitPack
-            if (System.getenv("JITPACK") != "true") {
-                maven {
-                    name = "GitHubPackages"
-                    url = uri("https://maven.pkg.github.com/Appversation/AppstentCompose")
-                    credentials {
-                        username = System.getenv("GITHUB_ACTOR") ?: ""
-                        password = System.getenv("GITHUB_TOKEN") ?: ""
-                    }
-                }
-            }
-        }
         publications {
             release(MavenPublication) {
-                groupId = 'com.appversation'
+                groupId = project.group.toString()
                 artifactId = 'appstent-compose'
-                version = '1.7.1'
+                version = project.version.toString()
 
                 from components.release
                 

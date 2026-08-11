@@ -14,28 +14,29 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerScope
+import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 
-import androidx.compose.material.Button
-import androidx.compose.material.Text as Material2Text
-import androidx.compose.material.Icon as Material2Icon
-import androidx.compose.material3.Icon // Your default Icon will be from M3
-
-import androidx.compose.material.BottomNavigation
-import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.LinearProgressIndicator
-import androidx.compose.material.LocalContentAlpha
-import androidx.compose.material.LocalContentColor
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.Divider
+import androidx.compose.material.Button as LegacyButton
+import androidx.compose.material.CircularProgressIndicator as LegacyCircularProgressIndicator
+import androidx.compose.material.Icon as LegacyIcon
+import androidx.compose.material.LinearProgressIndicator as LegacyLinearProgressIndicator
+import androidx.compose.material.Text
+import androidx.compose.material.TopAppBar as LegacyTopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Divider as Material3Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -81,18 +82,14 @@ import coil.compose.AsyncImage
 import com.appversation.appstentcompose.ModuleConfigs.ActionHandlerProvider
 import com.appversation.appstentcompose.ModuleConfigs.CustomContentDataProvider
 import com.appversation.appstentcompose.ui.theme.AppstentTheme
-import com.google.accompanist.pager.ExperimentalPagerApi
-import com.google.accompanist.pager.HorizontalPager
-import com.google.accompanist.pager.PagerScope
-import com.google.accompanist.pager.VerticalPager
-import com.google.accompanist.pager.rememberPagerState
-import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.ui.AspectRatioFrameLayout.RESIZE_MODE_FILL
-import com.google.android.exoplayer2.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
-import com.google.android.exoplayer2.ui.StyledPlayerView
+import com.appversation.appstentcompose.ui.theme.LegacyTypography
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FILL
+import androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
+import androidx.media3.ui.PlayerView
 import org.json.JSONArray
 import org.json.JSONObject
 import org.commonmark.node.BulletList
@@ -149,6 +146,11 @@ fun AppstentView(
     actionHandlerProvider: ActionHandlerProvider? = null,
     handlesTapActions: Boolean = true,
 ) {
+    val descriptorFingerprint = viewContent.toString()
+    remember(descriptorFingerprint) {
+        validateViewContentDescriptor(viewContent)
+    }
+
     AppstentTheme {
         if (viewContent.has(keyName = "type") && isVisible(viewContent, customContentDataProvider)) {
             val ancestorActions = LocalAncestorAppstentActions.current
@@ -436,9 +438,17 @@ fun DividerView(
 ) {
     val context = LocalContext.current
 
-    Divider(
+    PixelCompatibleDivider(
         modifier = modifier.getModifier(viewContent, context, customContentDataProvider)
     )
+}
+
+@Suppress("DEPRECATION")
+@Composable
+private fun PixelCompatibleDivider(modifier: Modifier = Modifier) {
+    // HorizontalDivider has different default pixels in Material 3 1.4.0; keep the renamed
+    // primitive until that observable renderer change is versioned intentionally.
+    Material3Divider(modifier = modifier)
 }
 
 @Composable
@@ -528,16 +538,16 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customConte
     if (viewContent.has(keyName = "font")) {
         val fontString = viewContent.appstentResolvedString(keyName = "font")
         textStyle = when (fontString) {
-            "largeTitle" -> MaterialTheme.typography.h3
-            "title" -> MaterialTheme.typography.h4
-            "title2" -> MaterialTheme.typography.h5
-            "title3" -> MaterialTheme.typography.h6
-            "headline" -> MaterialTheme.typography.subtitle1
-            "subheadline" -> MaterialTheme.typography.subtitle2
-            "body" -> MaterialTheme.typography.body1
-            "callout" -> MaterialTheme.typography.body2
-            "footnote" -> MaterialTheme.typography.overline
-            "caption" -> MaterialTheme.typography.caption
+            "largeTitle" -> LegacyTypography.h3
+            "title" -> LegacyTypography.h4
+            "title2" -> LegacyTypography.h5
+            "title3" -> LegacyTypography.h6
+            "headline" -> LegacyTypography.subtitle1
+            "subheadline" -> LegacyTypography.subtitle2
+            "body" -> LegacyTypography.body1
+            "callout" -> LegacyTypography.body2
+            "footnote" -> LegacyTypography.overline
+            "caption" -> LegacyTypography.caption
             else -> {
 
                 getCustomFontStyle(viewContent)
@@ -800,7 +810,7 @@ fun DisclosureGroupView(
                 )
             }
 
-            Material2Icon(
+            LegacyIcon(
                 imageVector = if (expanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
                 contentDescription = null
             )
@@ -831,7 +841,7 @@ fun MenuView(
     val context = LocalContext.current
 
     Box(modifier = modifier.getModifier(viewContent, context, customContentDataProvider)) {
-        Button(onClick = { expanded = true }) {
+        LegacyButton(onClick = { expanded = true }) {
             Text(title)
         }
 
@@ -842,6 +852,15 @@ fun MenuView(
             (0 until views.length()).forEach {
                 val menuItem = views.getJSONObject(it)
                 DropdownMenuItem(
+                    text = {
+                        AppstentView(
+                            viewContent = menuItem,
+                            navController = navController,
+                            customContentDataProvider = customContentDataProvider,
+                            actionHandlerProvider = actionHandlerProvider,
+                            handlesTapActions = false,
+                        )
+                    },
                     enabled = menuItem.optBoolean(keyName = "isEnabled", fallback = true),
                     onClick = {
                         expanded = false
@@ -855,16 +874,8 @@ fun MenuView(
                             localHandler = actionHandlerProvider,
                             globalHandler = ModuleConfigs.globalActionHandlerProvider,
                         )
-                    }
-                ) {
-                    AppstentView(
-                        viewContent = menuItem,
-                        navController = navController,
-                        customContentDataProvider = customContentDataProvider,
-                        actionHandlerProvider = actionHandlerProvider,
-                        handlesTapActions = false,
-                    )
-                }
+                    },
+                )
             }
         }
     }
@@ -887,7 +898,7 @@ fun ProgressView(
         .optString(keyName = "progressTintColor", fallback = "")
         .takeIf { it.isNotEmpty() }
         ?.let { resolveAppstentColor(it, context, customContentDataProvider) }
-        ?: MaterialTheme.colors.primary
+        ?: MaterialTheme.colorScheme.primary
 
     Column(modifier = modifier.getModifier(viewContent, context, customContentDataProvider)) {
         if (!labelsHidden && label.isNotEmpty()) {
@@ -901,12 +912,12 @@ fun ProgressView(
         }
 
         if (progressType == "circular") {
-            CircularProgressIndicator(
+            LegacyCircularProgressIndicator(
                 progress = progressFraction,
                 color = progressTintColor
             )
         } else {
-            LinearProgressIndicator(
+            LegacyLinearProgressIndicator(
                 progress = progressFraction,
                 color = progressTintColor,
                 modifier = Modifier.fillMaxWidth()
@@ -1226,7 +1237,7 @@ fun VideoView(
 
     AndroidView(
         factory = {
-            StyledPlayerView(context).apply {
+            PlayerView(context).apply {
                 useController = playbackConfig.showPlaybackControls
                 player = exoPlayer
                 layoutParams =
@@ -1330,7 +1341,6 @@ enum class Direction {
     x, y, z
 }
 
-@OptIn(ExperimentalPagerApi::class)
 @Composable
 fun PagerView(
     viewContent: JSONObject,
@@ -1343,7 +1353,7 @@ fun PagerView(
     val tabs = viewContent.getJSONArray(keyName = "tabs")
     if (tabs.length() == 0) return
 
-    val pagerState = rememberPagerState()
+    val pagerState = rememberPagerState(pageCount = tabs::length)
     val pagerBehavior = resolvePagerBehavior(viewContent)
     val pagerContainerModifier = modifier.getViewportContainerModifier(
         viewContent,
@@ -1376,7 +1386,7 @@ fun PagerView(
                         behavior = pagerBehavior,
                         currentPage = currentPage,
                         selectedPage = pagerState.currentPage,
-                        selectedPageOffset = pagerState.currentPageOffset,
+                        selectedPageOffset = pagerState.currentPageOffsetFraction,
                     ),
             ) {
                 if (tabContent.has(keyName = "type")) {
@@ -1392,17 +1402,15 @@ fun PagerView(
 
         if (pagerBehavior.axis == PagerAxis.Vertical) {
             VerticalPager(
-                count = tabs.length(),
                 state = pagerState,
                 modifier = pagerModifier,
-                content = pageContent,
+                pageContent = pageContent,
             )
         } else {
             HorizontalPager(
-                count = tabs.length(),
                 state = pagerState,
                 modifier = pagerModifier,
-                content = pageContent,
+                pageContent = pageContent,
             )
         }
 
@@ -1716,7 +1724,7 @@ fun IncludedView(
             modifier = modifier.getModifier(viewContent, context, customContentDataProvider),
             contentAlignment = Alignment.Center,
         ) {
-            CircularProgressIndicator(
+            LegacyCircularProgressIndicator(
                 modifier = Modifier.semantics {
                     contentDescription = "Loading included content"
                 },
@@ -1729,7 +1737,7 @@ fun IncludedView(
         ) {
             Text(
                 text = "Unable to load content",
-                color = MaterialTheme.colors.error,
+                color = MaterialTheme.colorScheme.error,
             )
         }
 
@@ -2121,10 +2129,10 @@ fun ListView(
                 stickyHeader {
                     Text(
                         text = text,
-                        style = MaterialTheme.typography.subtitle2,
+                        style = LegacyTypography.subtitle2,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(MaterialTheme.colors.background)
+                            .background(MaterialTheme.colorScheme.background)
                             .padding(vertical = listBehavior.headerVerticalPadding.dp),
                     )
                 }
@@ -2137,7 +2145,7 @@ fun ListView(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             AppstentView(viewContent = views.getJSONObject(viewIndex), Modifier, navController, customContentDataProvider, actionHandlerProvider)
                             if (listBehavior.showsDividers && viewIndex < views.length() - 1) {
-                                Divider()
+                                PixelCompatibleDivider()
                             }
                         }
                     }
@@ -2160,7 +2168,7 @@ fun ListView(
                     Column(modifier = Modifier.fillMaxWidth()) {
                         AppstentView(viewContent = views.getJSONObject(viewIndex), Modifier, navController, customContentDataProvider, actionHandlerProvider)
                         if (listBehavior.showsDividers && viewIndex < views.length() - 1) {
-                            Divider()
+                            PixelCompatibleDivider()
                         }
                     }
                 }
@@ -2219,7 +2227,7 @@ fun NavigationApstentView(
         modifier = navModifier,
         topBar = {
             if (!navigationBarBehavior.isHidden) {
-                TopAppBar(
+                LegacyTopAppBar(
                     title = { Text(navigationBarBehavior.title) },
                     actions = {
                         (0 until toolbarViews.length()).forEach { index ->
@@ -2449,7 +2457,7 @@ fun BottomBar(
         return
     }
 
-    val firstTabTitle = tabs.getJSONObject(0).getString(keyName = "title")
+    val firstTabRoute = bottomBarRoute(0)
     val navController = rememberNavController()
     val tabContainerModifier = modifier.getViewportContainerModifier(
         viewContent,
@@ -2461,36 +2469,43 @@ fun BottomBar(
         .takeIf { it.isNotEmpty() }
         ?.let { colorString ->
             resolveAppstentColor(colorString, context, customContentDataProvider)
-        } ?: MaterialTheme.colors.background
+        } ?: MaterialTheme.colorScheme.background
 
     Scaffold(
         modifier = tabContainerModifier,
         bottomBar = {
-            BottomNavigation(
+            NavigationBar(
                 modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
-                backgroundColor = bottomBarColor
+                containerColor = bottomBarColor,
             ) {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
                 (0 until tabs.length()).forEach {
 
                     val tab = tabs.getJSONObject(it)
-                    val title = tab.getString(keyName = "title")
-                    val icon = tab.getJSONObject(keyName = "icon")
+                    val title = tab.optString(keyName = "title", fallback = "")
+                    val icon = if (tab.has(keyName = "icon")) {
+                        tab.getJSONObject(keyName = "icon")
+                    } else {
+                        null
+                    }
+                    val route = bottomBarRoute(it)
 
-                    BottomNavigationItem(
+                    NavigationBarItem(
                         icon = {
-                            BottomBarIcon(
-                                viewContent = icon,
-                                title = title,
-                                customContentDataProvider = customContentDataProvider,
-                                actionHandlerProvider = actionHandlerProvider,
-                            )
+                            if (icon != null) {
+                                BottomBarIcon(
+                                    viewContent = icon,
+                                    title = title,
+                                    customContentDataProvider = customContentDataProvider,
+                                    actionHandlerProvider = actionHandlerProvider,
+                                )
+                            }
                         },
                         label = { Text(title) },
-                        selected = currentDestination?.hierarchy?.any { it.route == title } == true,
+                        selected = currentDestination?.hierarchy?.any { it.route == route } == true,
                         onClick = {
-                            navController.navigate(title) {
+                            navController.navigate(route) {
                                 // Pop up to the start destination of the graph to
                                 // avoid building up a large stack of destinations
                                 // on the back stack as users select items
@@ -2509,15 +2524,14 @@ fun BottomBar(
             }
         }
     ) { innerPadding ->
-        NavHost(navController, startDestination = firstTabTitle, Modifier.padding(innerPadding)) {
+        NavHost(navController, startDestination = firstTabRoute, Modifier.padding(innerPadding)) {
 
             (0 until tabs.length()).forEach {
 
                 val tab = tabs.getJSONObject(it)
-                val title = tab.getString(keyName = "title")
                 val tabContent = tab.getJSONObject(keyName = "tabContent")
 
-                composable(title) {
+                composable(bottomBarRoute(it)) {
                     AppstentView(
                         viewContent = tabContent,
                         navController = navController,
@@ -2529,6 +2543,8 @@ fun BottomBar(
         }
     }
 }
+
+private fun bottomBarRoute(index: Int): String = "__appstent_tab_$index"
 
 private val BottomBarIconSize = 24.dp
 
@@ -2552,9 +2568,9 @@ private fun BottomBarIcon(
             .optString(keyName = "foregroundColor", fallback = "")
             .takeIf(String::isNotBlank)
             ?.let { resolveAppstentColor(it, context, customContentDataProvider) }
-            ?: LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
+            ?: LocalContentColor.current
 
-        Material2Icon(
+        LegacyIcon(
             imageVector = imageVector,
             contentDescription = title,
             modifier = Modifier.size(BottomBarIconSize),

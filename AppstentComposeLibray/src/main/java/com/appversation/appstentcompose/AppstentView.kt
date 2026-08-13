@@ -579,37 +579,45 @@ fun TextView(viewContent: JSONObject, modifier: Modifier = Modifier, customConte
         TextOverflow.Ellipsis
     }
 
-    val isMarkdown = viewContent.optBoolean(keyName = "isMarkdown", fallback = false)
-
-    if (isMarkdown) {
-
-        val markdownText = rememberMarkdownText(
+    val renderedText = if (viewContent.optBoolean(keyName = "isMarkdown", fallback = false)) {
+        rememberMarkdownText(
             markdown = textString,
             textStyle = textStyle,
             color = color
         )
-
-        Text(
-            text = markdownText,
-            color = color,
-            style = textStyle,
-            modifier = modifier.getModifier(viewContent, context, customContentDataProvider),
-            maxLines = lineLimit,
-            overflow = textOverflow,
-            textAlign = textAlignment
-        )
     } else {
-
-        Text(textString,
+        AnnotatedString(textString)
+    }
+    val styledModifier = modifier.getModifier(viewContent, context, customContentDataProvider)
+    val textContent: @Composable (Modifier) -> Unit = { textModifier ->
+        Text(
+            text = renderedText,
             color = color,
             style = textStyle,
-            modifier = modifier.getModifier(viewContent, context, customContentDataProvider),
+            modifier = textModifier,
             maxLines = lineLimit,
             overflow = textOverflow,
             textAlign = textAlignment
         )
     }
+
+    if (viewContent.fillsVerticalSpace()) {
+        Box(
+            modifier = styledModifier,
+            contentAlignment = getAlignment(
+                viewContent.optString(keyName = "alignment", fallback = "center")
+            ),
+        ) {
+            textContent(Modifier)
+        }
+    } else {
+        textContent(styledModifier)
+    }
 }
+
+internal fun JSONObject.fillsVerticalSpace(): Boolean =
+    optBoolean(keyName = "fillMaxHeight", fallback = false) ||
+        optString(keyName = "fillModifier", fallback = "") in setOf("fillMaxHeight", "fillMaxSize")
 
 @Composable
 private fun rememberMarkdownText(
@@ -1813,7 +1821,12 @@ fun GridView(
             verticalArrangement = Arrangement.spacedBy(rowSpacing.dp)) {
 
             items(views.length()) {
-                AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider, actionHandlerProvider)
+                Box(
+                    modifier = Modifier.fillMaxHeight(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider, actionHandlerProvider)
+                }
             }
         }
     } else if (isInsideVerticalScroller && !viewContent.has(keyName = "height")) {
@@ -1831,7 +1844,12 @@ fun GridView(
             verticalArrangement = Arrangement.spacedBy(rowSpacing.dp)) {
 
             items(views.length()) {
-                AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider, actionHandlerProvider)
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    AppstentView(viewContent = views.getJSONObject(it), Modifier, navController, customContentDataProvider, actionHandlerProvider)
+                }
             }
         }
     }

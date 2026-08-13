@@ -1,5 +1,27 @@
 # AppstentCompose
 
+## Installation
+
+Add JitPack to dependency repositories:
+
+```kotlin
+repositories {
+    google()
+    mavenCentral()
+    maven("https://jitpack.io")
+}
+```
+
+Then add the release candidate:
+
+```kotlin
+implementation("com.github.Appversation:AppstentCompose:v1.10.0-rc.2")
+```
+
+See the repository [changelog](../CHANGELOG.md) and
+[1.10 migration guide](../MIGRATION.md) for Media3, Foundation Pager, and
+strict versioned-descriptor changes.
+
 ## Content Environments
 
 Configure the API key and optional content environment before loading remote Appstent content:

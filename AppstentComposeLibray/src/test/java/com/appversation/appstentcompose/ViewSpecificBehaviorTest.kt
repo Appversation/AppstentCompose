@@ -401,6 +401,15 @@ class ViewSpecificBehaviorTest {
     }
 
     @Test
+    fun verticallyFilledContentUsesContainerAlignmentPath() {
+        assertTrue(JSONObject().put("fillMaxHeight", true).fillsVerticalSpace())
+        assertTrue(JSONObject().put("fillModifier", "fillMaxHeight").fillsVerticalSpace())
+        assertTrue(JSONObject().put("fillModifier", "fillMaxSize").fillsVerticalSpace())
+        assertFalse(JSONObject().put("fillMaxHeight", false).fillsVerticalSpace())
+        assertFalse(JSONObject().put("fillModifier", "fillMaxWidth").fillsVerticalSpace())
+    }
+
+    @Test
     fun includedContentStateDistinguishesLoadedAndFailedRequests() {
         val loaded = resolveIncludedContentState(
             baseContent = JSONObject().put("type", "text").put("text", "Base"),

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.10.0 — 2026-08-15
+
+- Promote the conformance-validated 1.10 release candidate without additional
+  runtime changes.
+
 ## 1.10.0-rc.2 — 2026-08-12
 
 - Match iOS vertical alignment for text that fills its available height.

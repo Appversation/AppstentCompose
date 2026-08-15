@@ -85,7 +85,7 @@ class ViewContentConformanceTest {
 
         val androidCapabilities = capabilityMatrix
             .getJSONObject("sdkVersions")
-            .getJSONObject("AppstentCompose@1.10.0-rc.1")
+            .getJSONObject("AppstentCompose@1.10")
             .getJSONObject("capabilities")
         val capabilityIds = buildSet {
             val keys = androidCapabilities.keys()

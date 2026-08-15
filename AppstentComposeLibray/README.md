@@ -12,10 +12,10 @@ repositories {
 }
 ```
 
-Then add the release candidate:
+Then add the stable release:
 
 ```kotlin
-implementation("com.github.Appversation:AppstentCompose:v1.10.0-rc.2")
+implementation("com.github.Appversation:AppstentCompose:v1.10.0")
 ```
 
 See the repository [changelog](../CHANGELOG.md) and

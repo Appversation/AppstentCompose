@@ -301,7 +301,8 @@ fun Modifier.getFrameSizeModifier(modifierContent: JSONObject) : Modifier {
 
             val width = modifierContent.appstentResolvedDouble(keyName = "width")
 
-            modifier.requiredWidth(width.dp)
+            // Keep authored widths within the available viewport or grid cell.
+            modifier.width(width.dp)
         } else {
             modifier
         }

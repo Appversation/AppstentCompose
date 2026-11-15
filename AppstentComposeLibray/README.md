@@ -15,7 +15,7 @@ repositories {
 Then add the stable release:
 
 ```kotlin
-implementation("com.github.Appversation:AppstentCompose:v1.10.0")
+implementation("com.github.Appversation:AppstentCompose:v1.10.1")
 ```
 
 See the repository [changelog](../CHANGELOG.md) and

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.10.1 — 2026-11-14
+
+- Constrain authored widths to the available viewport or grid cell so sample
+  cards keep their content visible on narrower Android layouts.
+- Verified the width fix in Android Preview on the Pixel 6 emulator and physical
+  Pixel 10 before release.
+
 ## 1.10.0 — 2026-08-15
 
 - Promote the conformance-validated 1.10 release candidate without additional

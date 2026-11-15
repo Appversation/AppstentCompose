@@ -5,7 +5,7 @@
 Add `https://jitpack.io` to dependency repositories and use:
 
 ```kotlin
-implementation("com.github.Appversation:AppstentCompose:v1.10.0")
+implementation("com.github.Appversation:AppstentCompose:v1.10.1")
 ```
 
 ## Media3

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.10.2-rc.1
+
+- Support one-shot AppstentContent entrance motion with fade, slide, and scale
+  presets that respect Android’s motion duration scale.
+
 ## 1.10.1 — 2026-11-14
 
 - Constrain authored widths to the available viewport or grid cell so sample

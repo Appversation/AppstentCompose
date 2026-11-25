@@ -1,7 +1,7 @@
 {
   "contractVersion": "1.0.0",
   "sdkVersions": {
-    "AppstentUI@2.0": {
+    "AppstentUI@2.1.6": {
       "platform": "ios",
       "capabilities": {
         "schema-evolution": "conformant",
@@ -24,6 +24,7 @@
         "tap-propagation": "conformant",
         "actions-accessibility": "conformant",
         "included-overrides": "conformant",
+        "built-in-motion": "known-gap",
         "media-flags": "conformant",
         "tabs": "conformant",
         "navigation": "conformant"
@@ -52,6 +53,7 @@
         "tap-propagation": "conformant",
         "actions-accessibility": "conformant",
         "included-overrides": "conformant",
+        "built-in-motion": "known-gap",
         "media-flags": "conformant",
         "tabs": "conformant",
         "navigation": "conformant"

@@ -172,6 +172,7 @@ fun AppstentView(
             } else {
                 modifier
             }
+            val presentedModifier = entranceMotionModifier(type, viewContent).then(interactiveModifier)
             val descendantActions = ownAction?.let { listOf(it) + ancestorActions } ?: ancestorActions
             val overlayView = if (viewContent.has(keyName = "overlayView")) {
                 viewContent.getJSONObject(keyName = "overlayView")
@@ -181,10 +182,10 @@ fun AppstentView(
 
             CompositionLocalProvider(LocalAncestorAppstentActions provides descendantActions) {
                 if (overlayView == null) {
-                    AppstentViewContent(viewContent, interactiveModifier, navController, customContentDataProvider, actionHandlerProvider)
+                    AppstentViewContent(viewContent, presentedModifier, navController, customContentDataProvider, actionHandlerProvider)
                 } else {
                     val overlayAlignment = getAlignment(viewContent.optString(keyName = "alignment", fallback = "center"))
-                    Box(modifier = interactiveModifier) {
+                    Box(modifier = presentedModifier) {
                         AppstentViewContent(viewContent, Modifier, navController, customContentDataProvider, actionHandlerProvider)
                         Box(
                             modifier = Modifier.matchParentSize(),

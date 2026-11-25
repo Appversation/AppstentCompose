@@ -27,6 +27,8 @@
         { "path": "/views/2/numColumns", "equals": "{layout.grid.columns}" },
         { "path": "/views/3/listStyle", "equals": "plain" },
         { "path": "/views/4/rotationAngle", "equals": "{motion.pager.rotation}" },
+        { "path": "/views/4/initialTabId", "equals": "versioned-tab-one" },
+        { "path": "/views/4/tabs/0/nodeId", "equals": "versioned-tab-one" },
         { "path": "/overlayView/type", "equals": "text" }
       ]
     },
@@ -194,6 +196,7 @@
         { "path": "/type", "equals": "list" },
         { "path": "/width", "equals": 320 },
         { "path": "/height", "equals": 240 },
+        { "path": "/sections/0/nodeId", "equals": "primary-section" },
         { "path": "/sections/0/views", "length": 3 }
       ]
     },
@@ -263,6 +266,22 @@
       ]
     },
     {
+      "id": "built-in-motion",
+      "file": "built-in-motion.json",
+      "concern": "entrance motion presets, static sibling, and included override",
+      "baselinePolicy": "structural-only",
+      "assertions": [
+        { "path": "/views/0/motion/preset", "equals": "fadeIn" },
+        { "path": "/views/1/motion/preset", "equals": "slideIn" },
+        { "path": "/views/1/motion/durationMs", "equals": 250 },
+        { "path": "/views/2/motion/preset", "equals": "scaleIn" },
+        { "path": "/views/3/text", "equals": "Static sibling" },
+        { "path": "/views/3/motion", "absent": true },
+        { "path": "/views/4/type", "equals": "included" },
+        { "path": "/views/4/motion/preset", "equals": "fadeIn" }
+      ]
+    },
+    {
       "id": "media-flags",
       "file": "media-flags.json",
       "concern": "media playback flags",
@@ -285,6 +304,8 @@
         { "path": "/height", "equals": 240 },
         { "path": "/pagerAxis", "equals": "horizontal" },
         { "path": "/pageIndexMode", "equals": "hide" },
+        { "path": "/initialTabId", "equals": "first-tab" },
+        { "path": "/tabs/0/nodeId", "equals": "first-tab" },
         { "path": "/tabs", "length": 2 }
       ]
     },

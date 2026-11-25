@@ -12,6 +12,37 @@ import java.security.MessageDigest
 
 class ViewContentConformanceTest {
     @Test
+    fun entranceMotionParsesSharedFixtureAndIncludedOverride() {
+        val views = resourceObject("built-in-motion.json").getJSONArray("views")
+        val motions = (0 until 4).map { index ->
+            EntranceMotion.parse(views.getJSONObject(index).opt("motion"))
+        }
+        assertEquals(
+            listOf(
+                EntranceMotion(EntranceMotion.Preset.FadeIn, 250),
+                EntranceMotion(EntranceMotion.Preset.SlideIn, 250),
+                EntranceMotion(EntranceMotion.Preset.ScaleIn, 400),
+                null,
+            ),
+            motions,
+        )
+
+        val included = mergeIncludedContent(
+            JSONObject("""{"type":"text","text":"Included result","motion":{"preset":"scaleIn"}}"""),
+            views.getJSONObject(4),
+        )
+        assertEquals("text", included.getString("type"))
+        assertEquals(
+            EntranceMotion(EntranceMotion.Preset.FadeIn, 300),
+            EntranceMotion.parse(included.opt("motion")),
+        )
+        for (value in listOf(true, "250", 2.5, 0, 1001)) {
+            val invalid = JSONObject().put("preset", "fadeIn").put("durationMs", value)
+            assertEquals(null, EntranceMotion.parse(invalid))
+        }
+    }
+
+    @Test
     fun everyFixturePassesStructuralAssertionsBeforeRendering() {
         val manifest = resourceObject("manifest.json")
         val capabilityMatrix = resourceObject("capability-matrix.json")

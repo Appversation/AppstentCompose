@@ -53,12 +53,15 @@
     },
     {
       "type": "tabbedView",
+      "nodeId": "versioned-tabs",
+      "initialTabId": "versioned-tab-one",
       "tabStyle": "pageStyle",
       "rotationAngle": "{motion.pager.rotation}",
       "width": 320,
       "height": 180,
       "tabs": [
         {
+          "nodeId": "versioned-tab-one",
           "title": "One",
           "tabContent": {
             "type": "text",

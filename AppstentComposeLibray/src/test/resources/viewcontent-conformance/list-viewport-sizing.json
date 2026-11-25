@@ -5,6 +5,7 @@
   "height": 240,
   "sections": [
     {
+      "nodeId": "primary-section",
       "title": "Section",
       "views": [
         {

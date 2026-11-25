@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.semantics.SemanticsPropertiesAndroid
 import androidx.compose.ui.test.SemanticsMatcher
@@ -13,6 +15,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
@@ -27,6 +30,7 @@ import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,6 +44,40 @@ class Phase3InteractionUiTest {
     fun resetProviders() {
         ModuleConfigs.customContentViewProvider = null
         ModuleConfigs.globalActionHandlerProvider = null
+    }
+
+    @Test
+    fun entranceMotionMovesPaintWhileKeepingSiblingLayoutFixed() {
+        val initial = JSONObject(
+            """{"type":"text","nodeId":"motion","text":"Moving","motion":{"preset":"slideIn","durationMs":400}}""",
+        )
+        val content = mutableStateOf(initial)
+        composeRule.mainClock.autoAdvance = false
+        composeRule.setContent {
+            Column {
+                AppstentView(content.value, modifier = Modifier.testTag("moving"))
+                Text("Static", modifier = Modifier.testTag("sibling"))
+            }
+        }
+
+        val moving = composeRule.onNodeWithTag("moving")
+        val sibling = composeRule.onNodeWithTag("sibling")
+        val start = moving.getUnclippedBoundsInRoot()
+        val siblingBounds = sibling.getUnclippedBoundsInRoot()
+        composeRule.mainClock.advanceTimeBy(200)
+        val middle = moving.getUnclippedBoundsInRoot()
+        composeRule.mainClock.advanceTimeBy(300)
+        val end = moving.getUnclippedBoundsInRoot()
+
+        assertEquals(12f, (start.top - end.top).value, 0.6f)
+        assertTrue(middle.top < start.top && middle.top > end.top)
+        assertEquals(siblingBounds, sibling.getUnclippedBoundsInRoot())
+
+        composeRule.runOnIdle {
+            content.value = JSONObject(initial.toString()).put("text", "Edited")
+        }
+        composeRule.mainClock.advanceTimeByFrame()
+        assertEquals(end.top, moving.getUnclippedBoundsInRoot().top)
     }
 
     @Test

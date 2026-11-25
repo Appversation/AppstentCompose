@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "vStack",
+  "spacing": 12,
+  "views": [
+    {
+      "type": "text", "nodeId": "fade", "text": "Fade in",
+      "motion": { "preset": "fadeIn" }
+    },
+    {
+      "type": "text", "nodeId": "slide", "text": "Slide in",
+      "motion": { "preset": "slideIn", "durationMs": 250 }
+    },
+    {
+      "type": "hStack", "nodeId": "scale",
+      "motion": { "preset": "scaleIn", "durationMs": 400 },
+      "views": [{ "type": "text", "text": "Scale in" }]
+    },
+    { "type": "text", "nodeId": "static", "text": "Static sibling" },
+    {
+      "type": "included", "nodeId": "included-motion",
+      "source": "conformance/included-base",
+      "motion": { "preset": "fadeIn", "durationMs": 300 }
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 {
   "type": "tabbedView",
+  "nodeId": "conformance-tabs",
+  "initialTabId": "first-tab",
   "tabStyle": "pageStyle",
   "pagerAxis": "horizontal",
   "pageIndexMode": "hide",
@@ -8,6 +10,7 @@
   "height": 240,
   "tabs": [
     {
+      "nodeId": "first-tab",
       "title": "First",
       "tabContent": {
         "type": "text",
@@ -15,6 +18,7 @@
       }
     },
     {
+      "nodeId": "second-tab",
       "title": "Second",
       "tabContent": {
         "type": "text",

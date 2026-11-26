@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.10.3-rc.1
+## 1.10.3
 
 - Allow built-in entrance motion durations up to 10,000 milliseconds.
 

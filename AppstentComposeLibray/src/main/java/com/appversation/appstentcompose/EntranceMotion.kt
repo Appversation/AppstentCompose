@@ -5,6 +5,7 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -13,6 +14,12 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import org.json.JSONObject
+
+/**
+ * Supply a new value to replay mounted entrance effects while retaining the
+ * rendered document and its loaded content.
+ */
+val LocalAppstentMotionReplayVersion = compositionLocalOf { 0 }
 
 internal data class EntranceMotion(val preset: Preset, val durationMs: Int) {
     enum class Preset { FadeIn, SlideIn, ScaleIn }
@@ -48,7 +55,8 @@ internal fun entranceMotionModifier(type: String, content: JSONObject): Modifier
     } ?: return Modifier
 
     val durationScale = rememberCoroutineScope().coroutineContext[MotionDurationScale]
-    val progress = remember(type, nodeId) {
+    val replayVersion = LocalAppstentMotionReplayVersion.current
+    val progress = remember(type, nodeId, replayVersion) {
         Animatable(if (durationScale?.scaleFactor == 0f) 1f else 0f)
     }
     LaunchedEffect(progress) {

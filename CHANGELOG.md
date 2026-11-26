@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.10.2-rc.2
+
+- Replay mounted entrance animations without reloading included content or recreating the document.
+
 ## 1.10.2-rc.1
 
 - Support one-shot AppstentContent entrance motion with fade, slide, and scale

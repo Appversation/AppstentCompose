@@ -52,11 +52,14 @@ class Phase3InteractionUiTest {
             """{"type":"text","nodeId":"motion","text":"Moving","motion":{"preset":"slideIn","durationMs":400}}""",
         )
         val content = mutableStateOf(initial)
+        val replayVersion = mutableStateOf(0)
         composeRule.mainClock.autoAdvance = false
         composeRule.setContent {
-            Column {
-                AppstentView(content.value, modifier = Modifier.testTag("moving"))
-                Text("Static", modifier = Modifier.testTag("sibling"))
+            CompositionLocalProvider(LocalAppstentMotionReplayVersion provides replayVersion.value) {
+                Column {
+                    AppstentView(content.value, modifier = Modifier.testTag("moving"))
+                    Text("Static", modifier = Modifier.testTag("sibling"))
+                }
             }
         }
 
@@ -78,6 +81,15 @@ class Phase3InteractionUiTest {
         }
         composeRule.mainClock.advanceTimeByFrame()
         assertEquals(end.top, moving.getUnclippedBoundsInRoot().top)
+
+        repeat(2) {
+            composeRule.runOnIdle { replayVersion.value++ }
+            composeRule.mainClock.advanceTimeByFrame()
+            assertEquals(start.top, moving.getUnclippedBoundsInRoot().top)
+            assertEquals(siblingBounds, sibling.getUnclippedBoundsInRoot())
+            composeRule.mainClock.advanceTimeBy(500)
+            assertEquals(end.top, moving.getUnclippedBoundsInRoot().top)
+        }
     }
 
     @Test

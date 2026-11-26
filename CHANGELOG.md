@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.10.2 — 2026-11-25
+
+- Promote the verified built-in motion release candidate.
+
 ## 1.10.2-rc.2
 
 - Replay mounted entrance animations without reloading included content or recreating the document.

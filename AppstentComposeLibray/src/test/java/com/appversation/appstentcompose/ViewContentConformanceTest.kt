@@ -36,7 +36,9 @@ class ViewContentConformanceTest {
             EntranceMotion(EntranceMotion.Preset.FadeIn, 300),
             EntranceMotion.parse(included.opt("motion")),
         )
-        for (value in listOf(true, "250", 2.5, 0, 1001)) {
+        val longestMotion = JSONObject().put("preset", "fadeIn").put("durationMs", 10_000)
+        assertEquals(EntranceMotion(EntranceMotion.Preset.FadeIn, 10_000), EntranceMotion.parse(longestMotion))
+        for (value in listOf(true, "250", 2.5, 0, 10_001)) {
             val invalid = JSONObject().put("preset", "fadeIn").put("durationMs", value)
             assertEquals(null, EntranceMotion.parse(invalid))
         }

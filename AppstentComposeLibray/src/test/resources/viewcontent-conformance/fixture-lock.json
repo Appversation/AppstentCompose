@@ -3,7 +3,7 @@
   "algorithm": "sha256",
   "schema": {
     "file": "Shared/ViewContent.schema.json",
-    "sha256": "203da71163037532b9ad0f304c4ec66dd511d11be88304e80a05882ae5a44f35"
+    "sha256": "7a838836f2f54396ac8c5705967b6a0eda7558e2995c127c5f073583f605bea9"
   },
   "files": {
     "actions-accessibility.json": "2114c349acd57f29a5b29c3e22b83d2ae6e43f1373db09731db7bf3a95472f38",

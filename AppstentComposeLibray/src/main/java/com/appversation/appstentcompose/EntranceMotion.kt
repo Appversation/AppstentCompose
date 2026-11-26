@@ -39,7 +39,7 @@ internal data class EntranceMotion(val preset: Preset, val durationMs: Int) {
             } else {
                 250.0
             }
-            if (duration !in 1.0..1000.0 || duration != duration.toInt().toDouble()) return null
+            if (duration !in 1.0..10_000.0 || duration != duration.toInt().toDouble()) return null
             return EntranceMotion(preset, duration.toInt())
         }
     }

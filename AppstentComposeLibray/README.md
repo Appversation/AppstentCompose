@@ -33,7 +33,7 @@ ModuleConfigs.contentEnvironment = "prod" // or "qa", "staging_content", etc.
 
 `contentEnvironment` defaults to `prod`. Environment IDs are normalized to lowercase and must use 1-63 letters, numbers, underscores, or hyphens.
 
-To validate the selected environment explicitly:
+To validate the selected environment explicitly, use the environment endpoint. It accepts scoped read-only SDK keys without requiring permission to list documents:
 
 ```kotlin
 val repository = ViewContentRepository()

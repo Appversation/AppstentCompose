@@ -43,7 +43,7 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
     ): ContentEnvironmentValidationResult {
         return withContext(Dispatchers.IO) {
             val selectedEnvironment = ModuleConfigs.normalizeContentEnvironment(contentEnvironment)
-            val url = URL(contentURL)
+            val url = URL(contentURL + "__appstent/environment")
             val response = RequestHandler.requestGETResponse(
                 url = url,
                 additionalHeaders = RequestHandler.appstentHeaders(contentEnvironment = selectedEnvironment)
@@ -83,7 +83,7 @@ class ViewContentRepository(val scope: CoroutineScope = CoroutineScope(Dispatche
         withContext(Dispatchers.IO) {
             val selectedEnvironment = ModuleConfigs.normalizeContentEnvironment(contentEnvironment)
             RequestHandler.requestGET(
-                url = URL(contentURL),
+                url = URL(contentURL + "__appstent/environment"),
                 additionalHeaders = RequestHandler.appstentHeaders(contentEnvironment = selectedEnvironment)
             )
         }

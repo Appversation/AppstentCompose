@@ -1,8 +1,9 @@
 # Changelog
 
-## 1.10.3
+## 1.10.3 — 2026-11-27
 
 - Allow built-in entrance motion durations up to 10,000 milliseconds.
+- Validate content environments with scoped SDK keys through the dedicated environment endpoint.
 
 ## 1.10.2 — 2026-11-25
 

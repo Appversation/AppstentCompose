@@ -221,6 +221,12 @@ fun Modifier.getClipShapeModifier(modifierContent: JSONObject) : Modifier {
 }
 
 fun Modifier.getCornerRadiusModifier(modifierContent: JSONObject) : Modifier {
+    val isStack = when (modifierContent.optString(keyName = "type", fallback = "")) {
+        "hStack", "vStack", "zStack" -> true
+        else -> false
+    }
+    // A stack with no authored clip allows its children to slide beyond their layout bounds.
+    if (isStack && !modifierContent.has(keyName = "cornerRadius")) return this
 
     return try {
         val cornerRadius = modifierContent.appstentResolvedDouble(keyName = "cornerRadius")

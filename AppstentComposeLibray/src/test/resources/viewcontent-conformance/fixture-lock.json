@@ -3,7 +3,7 @@
   "algorithm": "sha256",
   "schema": {
     "file": "Shared/ViewContent.schema.json",
-    "sha256": "7a838836f2f54396ac8c5705967b6a0eda7558e2995c127c5f073583f605bea9"
+    "sha256": "59b168a3a50de1ffc52d17c60a86ba70e550433938e3088d33a0194e42ca6962"
   },
   "files": {
     "actions-accessibility.json": "2114c349acd57f29a5b29c3e22b83d2ae6e43f1373db09731db7bf3a95472f38",
@@ -11,7 +11,8 @@
     "bounded-horizontal-grid.json": "a769e0b653a939c0752ab90b47e3f117f9c5d1450cf38bd6eb8084bcc5688e69",
     "bounded-vertical-grid.json": "5ddc6dc9212fec5f8b621f69b7e0b6405b98bfe1fd50b388cbfa9f90cb1d85b2",
     "built-in-motion.json": "27614d46c37724767ceee98f55b2b26297d39de4d12f57e4091aeaa981841e98",
-    "capability-matrix.json": "93363e6ea54557d7bf43b5e2a8d5999af2ab3ed159575906f72dbbbf7763ddb3",
+    "capability-matrix.json": "983c3deeaa4c061da3e56014434c0b83598ff84a226e94fcb3ca733b90897bfd",
+    "entrance-motion-options.json": "6d2aba3bbfd142dde222db64c1645cdc4d6355c98682c65758fed959df5dabfa",
     "fill-modifier-sizing.json": "e5ba66b206476c6c4287aaf444ebb271e100d1cda1bf06aa3bb996698e0638b5",
     "frame-background-order.json": "52d2b1232331807a9e51eebb115e16ccfa2d4666586aab753160907df188e36b",
     "grid-item-bounds.json": "9d8df39f98368d43a900f7aa1c2b37e3cc38f2bbd16d7b6117b5e47342cf6d37",
@@ -21,7 +22,7 @@
     "intrinsic-stacks.json": "9c86622824f263794ea9f9c0f009619098c877bbce8113e41bc36cc18032cdca",
     "list-styles.json": "87a8ba5a9a66cd856889532079e91045fb644973d78c2a27659af0409a7a8374",
     "list-viewport-sizing.json": "9f46a69ba82f00ddfa79afec80039688ed6967265a204efa90858354eebe1493",
-    "manifest.json": "7afa478e941428ff0bbb5eab78a3cb38ceb78d256eb39d2cec2093dc8ddfa93f",
+    "manifest.json": "9d60bb026d0dfca5cd041d85f412fec82abbb4f931c78c437ec7f369d725d57c",
     "media-flags.json": "aae5f9da12ce75888b7b8f446006e6d4a6f214e79febcaf20705aa0127c4e527",
     "navigation.json": "11079b6d77b7699ff6d059c18a4c3c7dc9d67f6fc0a8873593ca711effb71642",
     "relative-sizing.json": "86c18e9f2eb9bbfed838106a7fcc28426e5ccf51785e71c820504f848ebaedd6",

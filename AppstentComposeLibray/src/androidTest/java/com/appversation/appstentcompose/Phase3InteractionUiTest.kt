@@ -1,11 +1,18 @@
 package com.appversation.appstentcompose
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.UriHandler
@@ -15,6 +22,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -24,6 +32,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.click
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.json.JSONArray
 import org.json.JSONObject
@@ -90,6 +100,116 @@ class Phase3InteractionUiTest {
             composeRule.mainClock.advanceTimeBy(500)
             assertEquals(end.top, moving.getUnclippedBoundsInRoot().top)
         }
+    }
+
+    @Test
+    fun fadeAndSlideHoldsDuringDelayAndReplaysEditedMotionInRtl() {
+        val initial = JSONObject(
+            """{"type":"text","nodeId":"motion","text":"Moving","motion":{"preset":"fadeSlideIn","delayMs":600,"durationMs":1200,"direction":"left","distance":48,"easing":"linear"}}""",
+        )
+        val content = mutableStateOf(initial)
+        val replayVersion = mutableStateOf(0)
+        composeRule.mainClock.autoAdvance = false
+        composeRule.setContent {
+            CompositionLocalProvider(
+                LocalAppstentMotionReplayVersion provides replayVersion.value,
+                LocalLayoutDirection provides LayoutDirection.Rtl,
+            ) {
+                Column {
+                    AppstentView(content.value, modifier = Modifier.testTag("moving"))
+                    Text("Static", modifier = Modifier.testTag("sibling"))
+                }
+            }
+        }
+
+        val moving = composeRule.onNodeWithTag("moving")
+        val sibling = composeRule.onNodeWithTag("sibling")
+        val start = moving.getUnclippedBoundsInRoot()
+        val siblingBounds = sibling.getUnclippedBoundsInRoot()
+        composeRule.mainClock.advanceTimeBy(400)
+        assertEquals(start, moving.getUnclippedBoundsInRoot())
+        composeRule.mainClock.advanceTimeBy(800)
+        val middle = moving.getUnclippedBoundsInRoot()
+        composeRule.mainClock.advanceTimeBy(650)
+        val end = moving.getUnclippedBoundsInRoot()
+
+        assertEquals(-48f, (start.left - end.left).value, 0.6f)
+        assertEquals(-24f, (middle.left - end.left).value, 2f)
+        assertEquals(siblingBounds, sibling.getUnclippedBoundsInRoot())
+
+        composeRule.runOnIdle {
+            content.value = JSONObject(initial.toString()).apply {
+                getJSONObject("motion").put("direction", "right").put("distance", 32)
+            }
+        }
+        composeRule.mainClock.advanceTimeByFrame()
+        assertEquals(end, moving.getUnclippedBoundsInRoot())
+
+        composeRule.runOnIdle { replayVersion.value++ }
+        composeRule.mainClock.advanceTimeByFrame()
+        assertEquals(32f, (moving.getUnclippedBoundsInRoot().left - end.left).value, 0.6f)
+        composeRule.mainClock.advanceTimeBy(400)
+        assertEquals(32f, (moving.getUnclippedBoundsInRoot().left - end.left).value, 0.6f)
+        composeRule.mainClock.advanceTimeBy(1450)
+        assertEquals(end, moving.getUnclippedBoundsInRoot())
+        assertEquals(siblingBounds, sibling.getUnclippedBoundsInRoot())
+    }
+
+    @Test
+    fun fadeAndSlideMovesTheEntirePaintedRow() {
+        val content = JSONObject(
+            """
+            {"type":"vStack","padding":24,"spacing":12,"views":[
+                {"type":"text","text":"Moving row","backgroundColor":"#0044FF","motion":{
+                    "preset":"fadeSlideIn","delayMs":600,"durationMs":1200,
+                    "direction":"left","distance":48,"easing":"linear"
+                }},
+                {"type":"text","text":"Static sibling"}
+            ]}
+            """.trimIndent(),
+        )
+        val replayVersion = mutableStateOf(0)
+        composeRule.mainClock.autoAdvance = false
+        composeRule.setContent {
+            Box(
+                Modifier
+                    .size(width = 280.dp, height = 180.dp)
+                    .testTag("motion-canvas")
+                    .background(Color.White)
+                    .padding(start = 64.dp, top = 24.dp),
+            ) {
+                CompositionLocalProvider(LocalAppstentMotionReplayVersion provides replayVersion.value) {
+                    AppstentView(content)
+                }
+            }
+        }
+
+        fun paintedHorizontalBounds(): IntRange {
+            val pixels = composeRule.onNodeWithTag("motion-canvas").captureToImage().toPixelMap()
+            var left = pixels.width
+            var right = -1
+            for (y in 0 until pixels.height) {
+                for (x in 0 until pixels.width) {
+                    val color = pixels[x, y]
+                    if (color.blue - color.red > 0.15f && color.blue - color.green > 0.1f) {
+                        left = minOf(left, x)
+                        right = maxOf(right, x)
+                    }
+                }
+            }
+            assertTrue("The colored row should be visible", left <= right)
+            return left..right
+        }
+
+        composeRule.mainClock.advanceTimeBy(1900)
+        val settled = paintedHorizontalBounds()
+        composeRule.runOnIdle { replayVersion.value++ }
+        composeRule.mainClock.advanceTimeBy(1200)
+        val moving = paintedHorizontalBounds()
+
+        assertTrue("The row should move from the left", moving.first < settled.first)
+        assertTrue("The whole painted row should translate, moving=$moving settled=$settled",
+            kotlin.math.abs((settled.last - settled.first) - (moving.last - moving.first)) <= 2)
     }
 
     @Test

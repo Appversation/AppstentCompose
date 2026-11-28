@@ -282,6 +282,26 @@
       ]
     },
     {
+      "id": "entrance-motion-options",
+      "file": "entrance-motion-options.json",
+      "concern": "entrance delay, physical slide directions, distance, easing, combined fade and slide, and replay with a static sibling and included root",
+      "baselinePolicy": "structural-only",
+      "assertions": [
+        { "path": "/views/0/motion/preset", "equals": "fadeSlideIn" },
+        { "path": "/views/0/motion/delayMs", "equals": 600 },
+        { "path": "/views/0/motion/durationMs", "equals": 1200 },
+        { "path": "/views/0/motion/direction", "equals": "left" },
+        { "path": "/views/0/motion/distance", "equals": 48 },
+        { "path": "/views/0/motion/easing", "equals": "linear" },
+        { "path": "/views/1/motion/direction", "equals": "right" },
+        { "path": "/views/2/motion/direction", "equals": "top" },
+        { "path": "/views/3/motion/direction", "equals": "bottom" },
+        { "path": "/views/4/motion", "absent": true },
+        { "path": "/views/5/type", "equals": "included" },
+        { "path": "/views/5/motion/preset", "equals": "fadeSlideIn" }
+      ]
+    },
+    {
       "id": "media-flags",
       "file": "media-flags.json",
       "concern": "media playback flags",

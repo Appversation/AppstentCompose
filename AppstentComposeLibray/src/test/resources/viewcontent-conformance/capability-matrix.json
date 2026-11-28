@@ -25,6 +25,7 @@
         "actions-accessibility": "conformant",
         "included-overrides": "conformant",
         "built-in-motion": "known-gap",
+        "entrance-motion-options": "known-gap",
         "media-flags": "conformant",
         "tabs": "conformant",
         "navigation": "conformant"
@@ -54,6 +55,7 @@
         "actions-accessibility": "conformant",
         "included-overrides": "conformant",
         "built-in-motion": "known-gap",
+        "entrance-motion-options": "known-gap",
         "media-flags": "conformant",
         "tabs": "conformant",
         "navigation": "conformant"

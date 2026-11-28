@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.10.4-rc.1
+
+- Add entrance delay, physical slide direction and distance, four easing curves, and synchronized fade and slide.
+- Restart the delay and animation together when replaying entrance motion in Preview.
+- Let slides paint beyond stack bounds when the stack has no authored clip.
+
 ## 1.10.3 — 2026-11-27
 
 - Allow built-in entrance motion durations up to 10,000 milliseconds.

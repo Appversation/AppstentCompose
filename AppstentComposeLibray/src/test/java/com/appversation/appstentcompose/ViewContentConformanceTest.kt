@@ -45,6 +45,44 @@ class ViewContentConformanceTest {
     }
 
     @Test
+    fun entranceMotionOptionsParseSharedFixtureAndRejectInvalidSettings() {
+        val views = resourceObject("entrance-motion-options.json").getJSONArray("views")
+        val combined = EntranceMotion.parse(views.getJSONObject(0).opt("motion"))
+        assertEquals(
+            EntranceMotion(EntranceMotion.Preset.FadeSlideIn, 1200, 600,
+                EntranceMotion.Direction.Left, 48, EntranceMotion.Easing.Linear),
+            combined,
+        )
+        assertEquals(0.5f, combined?.easing?.curve?.transform(0.5f))
+        assertEquals(
+            listOf(EntranceMotion.Direction.Right, EntranceMotion.Direction.Top, EntranceMotion.Direction.Bottom),
+            (1..3).map { EntranceMotion.parse(views.getJSONObject(it).opt("motion"))?.direction },
+        )
+        assertEquals(null, EntranceMotion.parse(views.getJSONObject(4).opt("motion")))
+        val included = mergeIncludedContent(
+            JSONObject("""{"type":"text","text":"Included result","motion":{"preset":"scaleIn"}}"""),
+            views.getJSONObject(5),
+        )
+        assertEquals(
+            EntranceMotion(EntranceMotion.Preset.FadeSlideIn, 250, 400),
+            EntranceMotion.parse(included.opt("motion")),
+        )
+
+        for ((key, values) in mapOf(
+            "delayMs" to listOf(-1, 10_001, 0.5, JSONObject.NULL, "0", true),
+            "distance" to listOf(0, 257, 0.5, JSONObject.NULL, "12", true),
+            "direction" to listOf("leading", JSONObject.NULL),
+            "easing" to listOf("spring", JSONObject.NULL),
+        )) {
+            for (value in values) {
+                assertEquals(null, EntranceMotion.parse(JSONObject().put("preset", "slideIn").put(key, value)))
+            }
+        }
+        assertEquals(null, EntranceMotion.parse(JSONObject("""{"preset":"fadeIn","direction":"bottom"}""")))
+        assertEquals(null, EntranceMotion.parse(JSONObject("""{"preset":"scaleIn","distance":12}""")))
+    }
+
+    @Test
     fun everyFixturePassesStructuralAssertionsBeforeRendering() {
         val manifest = resourceObject("manifest.json")
         val capabilityMatrix = resourceObject("capability-matrix.json")

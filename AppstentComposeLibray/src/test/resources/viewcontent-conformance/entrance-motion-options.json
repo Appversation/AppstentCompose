@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "vStack",
+  "spacing": 24,
+  "padding": 24,
+  "views": [
+    {
+      "type": "text", "nodeId": "fade-slide", "text": "Delayed fade and slide from left",
+      "backgroundColor": "#DCE7FF",
+      "motion": { "preset": "fadeSlideIn", "delayMs": 600, "durationMs": 1200, "direction": "left", "distance": 48, "easing": "linear" }
+    },
+    {
+      "type": "text", "nodeId": "right-slide", "text": "Slide from right",
+      "motion": { "preset": "slideIn", "delayMs": 200, "durationMs": 900, "direction": "right", "distance": 32, "easing": "easeIn" }
+    },
+    {
+      "type": "text", "nodeId": "top-slide", "text": "Slide from top",
+      "motion": { "preset": "slideIn", "durationMs": 900, "direction": "top", "distance": 16, "easing": "easeOut" }
+    },
+    {
+      "type": "text", "nodeId": "bottom-slide", "text": "Slide from bottom",
+      "motion": { "preset": "slideIn", "durationMs": 900, "direction": "bottom", "distance": 16, "easing": "easeInOut" }
+    },
+    { "type": "text", "nodeId": "static", "text": "Static sibling", "backgroundColor": "#CDEFD6" },
+    {
+      "type": "included", "nodeId": "included-fade-slide",
+      "source": "conformance/included-base",
+      "motion": { "preset": "fadeSlideIn", "delayMs": 400 }
+    }
+  ]
+}
